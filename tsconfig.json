@@ -16,8 +16,9 @@
     "noImplicitAny": true,
     "esModuleInterop": true,
     "declaration": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true
   },
-  "include": ["src/**/*", "test/**/*.ts"],
+  "include": ["src/**/*"],
   "compileOnSave": false
 }

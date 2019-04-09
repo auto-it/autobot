@@ -2,15 +2,17 @@ import { Application } from "probot"; // eslint-disable-line no-unused-vars
 import { Context } from "probot/lib/context";
 import { WebhookPayloadPullRequest } from "@octokit/webhooks";
 
-const fetchConfig = (context: Context<WebhookPayloadPullRequest>) => {
+const fetchConfig = async (context: Context<WebhookPayloadPullRequest>) => {
   const contentArgs = context.repo({ path: ".autorc", ref: context.payload.pull_request.head.ref });
-  return context.github.repos.getContents(contentArgs);
+  const { data } = await context.github.repos.getContents(contentArgs);
+  return new Buffer(data.content, "base64").toString();
 };
 
 export = (app: Application) => {
   app.on("pull_request.opened", async context => {
+    app.log(context.payload.pull_request.labels);
     const config = await fetchConfig(context);
-    console.log(config);
+    app.log(config);
   });
 
   app.on("issues.opened", async context => {
