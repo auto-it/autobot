@@ -3,6 +3,7 @@ import { WebhookPayloadPullRequest } from "@octokit/webhooks";
 import merge from "deepmerge";
 import axios from "axios";
 import { property, isPlainObject } from "lodash";
+import { defaultLabelDefinition } from "auto/dist/release";
 
 export const fetchExtendedURLConfig = async (extendedConfig: string) => {
   try {
@@ -68,9 +69,12 @@ const fetchExtendedConfig = async (context: Context<WebhookPayloadPullRequest>, 
  * @param path A sub-path of the json result to access (i.e. "config.auto")
  */
 export const fetchConfig = async (context: Context<WebhookPayloadPullRequest>, path = "") => {
+  // Download config from GitHub
   const contentArgs = context.repo({ path: ".autorc", ref: context.payload.pull_request.head.ref });
   const { data } = await context.github.repos.getContents(contentArgs);
   let config = JSON.parse(Buffer.from(data.content, "base64").toString());
+
+  // Fetch extended config
   if (config.extends) {
     let extendedConfig = await fetchExtendedConfig(context, config.extends);
     if (path) {
@@ -79,5 +83,8 @@ export const fetchConfig = async (context: Context<WebhookPayloadPullRequest>, p
     config = merge(config, extendedConfig);
     delete config.extends;
   }
+
+  // Set defaults
+  config = merge({ labels: defaultLabelDefinition }, config);
   return config;
 };
