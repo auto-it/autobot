@@ -4,12 +4,29 @@ import merge from "deepmerge";
 import axios from "axios";
 import { property, isPlainObject } from "lodash";
 import { defaultLabelDefinition } from "auto/dist/release";
+import { logger as rootLogger } from "./logger";
+
+const logger = rootLogger.child({ module: __filename });
+
+type LabelConfig =
+  | string
+  | {
+      name?: string;
+      title: string;
+      description: string;
+      color?: string;
+    };
+
+export interface Config {
+  labels: {
+    [labelKey: string]: LabelConfig;
+  };
+  skipReleaseLabels: LabelConfig[];
+}
 
 export const fetchExtendedURLConfig = async (extendedConfig: string) => {
   try {
-    const { data } = await axios.get(extendedConfig, {
-      headers: { "Content-Type": "application/json" },
-    });
+    const { data } = await axios.get(extendedConfig);
     if (!isPlainObject(data)) {
       return JSON.parse(data);
     }
@@ -40,25 +57,31 @@ export const fetchExtendedRelativeConfig = async (
 
 export const fetchExtendedScopedModuleConfig = async (extendedConfig: string) => {
   const unpkgURL = `https://unpkg.com/${extendedConfig}/auto-config@latest/package.json`;
-  const { data } = await axios.get(unpkgURL, { headers: "application/json" });
+  const { data } = await axios.get(unpkgURL);
   return data.auto;
 };
 
 export const fetchExtendedModuleConfig = async (extendedConfig: string) => {
   const unpkgURL = `https://unpkg.com/auto-config-${extendedConfig}@latest/package.json`;
-  const { data } = await axios.get(unpkgURL, { headers: "application/json" });
+  const { data } = await axios.get(unpkgURL);
   return data.auto;
 };
 
 const fetchExtendedConfig = async (context: Context<WebhookPayloadPullRequest>, extendedConfig: string) => {
+  const { owner, repo } = context.repo();
+  logger.debug(`Found extended config`);
   switch (true) {
     case extendedConfig.startsWith("http"):
+      logger.debug(`Downloading extended config from ${extendedConfig}`);
       return await fetchExtendedURLConfig(extendedConfig);
     case extendedConfig.startsWith("."):
+      logger.debug(`Looking for extended config in ${owner}/${repo} at ${extendedConfig}`);
       return await fetchExtendedRelativeConfig(context, extendedConfig);
     case extendedConfig.startsWith("@"):
+      logger.debug(`Looking for extended config in module ${extendedConfig}/auto-config`);
       return await fetchExtendedScopedModuleConfig(extendedConfig);
     default:
+      logger.debug(`Looking for extended config in module auto-config-${extendedConfig}`);
       return await fetchExtendedModuleConfig(extendedConfig);
   }
 };
@@ -77,11 +100,14 @@ export const fetchConfig = async (context: Context<WebhookPayloadPullRequest>, p
   // Fetch extended config
   if (config.extends) {
     let extendedConfig = await fetchExtendedConfig(context, config.extends);
+    logger.debug(extendedConfig);
     if (path) {
       extendedConfig = property(path)(extendedConfig);
     }
+    logger.debug(extendedConfig);
     config = merge(config, extendedConfig);
     delete config.extends;
+    logger.debug(extendedConfig);
   }
 
   // Set defaults

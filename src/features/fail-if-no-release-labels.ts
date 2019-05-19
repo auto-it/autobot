@@ -1,51 +1,49 @@
-import { Context } from "probot/lib/context";
-import { WebhookPayloadPullRequest } from "@octokit/webhooks";
 import { PullsCreateResponseLabelsItem as Label } from "@octokit/rest";
 import { fromPairs } from "lodash";
+import { PullRequestPlugin } from "../plugin";
+import { Config } from "../config";
+import { Hooks, PRContext, Status } from "../Autobot";
+import { intersection } from "lodash";
 
-interface AutoConfig {
-  labels: {
-    [labelKey: string]:
-      | string
-      | {
-          name?: string;
-          title: string;
-          description: string;
-          color?: string;
-        };
-  };
-}
-
-const getConfigLabelPairs = (labels: AutoConfig["labels"]): [string, string][] =>
+const getConfigLabelPairs = (labels: Config["labels"]): [string, string][] =>
   Object.entries(labels).map(([labelKey, label]) => [
     labelKey,
     typeof label === "string" ? label : label.name ? label.name : labelKey,
   ]);
 
-export const failIfNoReleaseLabels = (context: Context<WebhookPayloadPullRequest>, config: AutoConfig) => {
-  const prLabels: string[] = (context.payload.pull_request.labels as Label[]).map(label => label.name);
-  const configLabels = fromPairs(getConfigLabelPairs(config.labels));
+export default class FailIfMissingLabels extends PullRequestPlugin {
+  public name = "FailIfNoReleaseLabels";
+  private failed = false;
 
-  // TODO: Add logic to find skip releases
-  const skipReleases = [];
-
-  const hasMajor = prLabels.includes(configLabels.major);
-  const hasMinor = prLabels.includes(configLabels.minor);
-  const hasPatch = prLabels.includes(configLabels.patch);
-
-  if (!hasMajor && !hasMinor && !hasPatch && skipReleases.length === 0) {
-    const {
-      owner: { login: owner },
-      name: repo,
-    } = context.payload.repository;
-    const { sha } = context.payload.pull_request.head;
-    context.github.repos.createStatus({
-      owner,
-      repo,
-      sha,
-      state: "failure",
-      context: "autobot",
-      description: "Missing auto labels",
-    });
+  public apply(prHooks: Hooks["pr"]) {
+    prHooks.shouldSkipAllProcessing.tapPromise(this.name, this.isMissingRequiredLabels.bind(this));
+    prHooks.modifySkipStatus.tapPromise(this.name, this.setSkipStatus.bind(this));
   }
-};
+
+  private async setSkipStatus(status: Status): Promise<Status> {
+    return this.failed
+      ? {
+          state: "failure",
+          description: "Missing version or skip-release labels",
+        }
+      : status;
+  }
+
+  private async isMissingRequiredLabels(context: PRContext, config: Config) {
+    const prLabels: string[] = (context.payload.pull_request.labels as Label[]).map(label => label.name);
+    const configLabels = fromPairs(getConfigLabelPairs(config.labels));
+
+    const hasMajor = prLabels.includes(configLabels.major);
+    const hasMinor = prLabels.includes(configLabels.minor);
+    const hasPatch = prLabels.includes(configLabels.patch);
+
+    const skipReleaseLabels = [config.labels["skip-release"], ...config.skipReleaseLabels];
+    const hasSkipReleaseLabels = intersection(skipReleaseLabels, prLabels).length > 0;
+
+    if (!hasMajor && !hasMinor && !hasPatch && !hasSkipReleaseLabels) {
+      this.failed = true;
+      return true;
+    }
+    return;
+  }
+}

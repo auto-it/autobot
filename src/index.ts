@@ -1,11 +1,14 @@
 import { Application } from "probot"; // eslint-disable-line no-unused-vars
-import { fetchConfig } from "./config";
+import { Autobot } from "./autobot";
+
+import FailIfNoReleaseLabels from "./features/fail-if-no-release-labels";
+
+const features = [new FailIfNoReleaseLabels()];
 
 export = (app: Application) => {
-  app.on("pull_request.opened", async context => {
-    app.log("pull request received");
-    app.log(context.payload.pull_request.labels);
-    const config = await fetchConfig(context, "auto");
-    app.log(config);
+  const autobot = Autobot.start(app, features);
+
+  app.on("pull_request", async context => {
+    autobot.onPullRequestReceived(context);
   });
 };
