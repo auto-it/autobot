@@ -3,7 +3,7 @@ import { Autobot } from "./autobot";
 
 import FailIfNoReleaseLabels from "./features/fail-if-no-release-labels";
 
-const features = [new FailIfNoReleaseLabels()];
+const features = [FailIfNoReleaseLabels];
 
 export = (app: Application) => {
   const autobot = Autobot.start(app, features);

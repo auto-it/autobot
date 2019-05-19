@@ -5,7 +5,6 @@ import { ExecutionScope, Hooks } from "./autobot";
  */
 export abstract class Plugin {
   abstract name: string;
-  abstract scope: ExecutionScope;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public apply(...args: any[]) {
     throw new Error(`Plugin ${this.name} must have an apply method`);
@@ -13,11 +12,13 @@ export abstract class Plugin {
 }
 
 export abstract class AppPlugin extends Plugin {
-  public scope = ExecutionScope.App;
+  public static scope = ExecutionScope.App;
   abstract apply(hooks: Hooks): void;
 }
 
 export abstract class PullRequestPlugin extends Plugin {
-  public scope = ExecutionScope.PullRequest;
+  public static scope = ExecutionScope.PullRequest;
   abstract apply(hooks: Hooks[ExecutionScope.PullRequest]): void;
 }
+
+export type UninitializedPlugin = typeof AppPlugin | typeof PullRequestPlugin;

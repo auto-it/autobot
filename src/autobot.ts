@@ -9,7 +9,7 @@ import {
 import { Application, Context } from "probot";
 import { WebhookPayloadPullRequest } from "@octokit/webhooks";
 import { fetchConfig, Config } from "./config";
-import { Plugin, AppPlugin, PullRequestPlugin } from "./plugin";
+import { Plugin, AppPlugin, PullRequestPlugin, UninitializedPlugin } from "./plugin";
 import { ReposCreateStatusParams } from "@octokit/rest";
 
 /**
@@ -35,7 +35,6 @@ export interface Hooks {
     onEnd: SyncHook<[]>;
   };
   [ExecutionScope.PullRequest]: {
-    /** Provides an opportunity to make changes to auto's config before anything else happens */
     modifyConfig: AsyncSeriesWaterfallHook<[Config]>;
     /**
      * If a plugin tapped into this method returns `true`, processing of the current
@@ -74,9 +73,9 @@ export interface Hooks {
 
 export class Autobot {
   private readonly hooks: Hooks;
-  private readonly plugins: Plugin[];
+  private readonly plugins: UninitializedPlugin[];
 
-  private constructor(plugins: Plugin[]) {
+  private constructor(plugins: UninitializedPlugin[]) {
     this.plugins = plugins;
     this.hooks = {
       [ExecutionScope.App]: {
@@ -97,12 +96,14 @@ export class Autobot {
   }
 
   private initializePlugins(scope: ExecutionScope) {
-    const filterByScope = <T extends Plugin>() => this.plugins.filter(plugin => plugin.scope === scope) as T[];
+    const scopePluginInstances = <T extends Plugin>() =>
+      this.plugins.filter(plugin => plugin.scope === scope).map(Plugin => new Plugin()) as T[];
+
     switch (scope) {
       case ExecutionScope.App:
-        return filterByScope<AppPlugin>().forEach(plugin => plugin.apply(this.hooks));
+        return scopePluginInstances<AppPlugin>().forEach(plugin => plugin.apply(this.hooks));
       case ExecutionScope.PullRequest:
-        return filterByScope<PullRequestPlugin>().forEach(plugin => plugin.apply(this.hooks.pr));
+        return scopePluginInstances<PullRequestPlugin>().forEach(plugin => plugin.apply(this.hooks.pr));
       default:
         throw new Error(`Attempting to intiailize plugins in unknown execution scope ${scope}`);
     }
@@ -125,7 +126,7 @@ export class Autobot {
 
   // Start of the public API
 
-  public static start(app: Application, plugins: Plugin[]) {
+  public static start(app: Application, plugins: UninitializedPlugin[]) {
     const autobot = new Autobot(plugins);
     autobot.hooks[ExecutionScope.App].onStart.call(app);
     return autobot;
