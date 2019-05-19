@@ -53,9 +53,21 @@ export interface Hooks {
      * is skipped. This is called _after_ the skip status has been set.
      */
     onSkip: AsyncParallelHook<[PRContext, Config]>;
-
+    /**
+     * If the PR isn't skipped then we create a pending status. This hook allows plugins
+     * to edit the status' message. Note that the status itself can't be changed from the
+     * `pending` state.
+     */
     modifyPendingStatusMessage: AsyncSeriesWaterfallHook<[string, PRContext, Config]>;
+    /**
+     * The meat and potatoes of the pr plugins. This is the plugin's time to do whatever it
+     * needs to do to the PR.
+     */
     process: AsyncSeriesHook<[PRContext, Config]>;
+    /**
+     * After all the plugins have processed the PR, there's a change to modify
+     * the status being reported to GitHub. It defaults to `success` with no message.
+     */
     modifyCompleteStatus: AsyncSeriesWaterfallHook<[Status, PRContext, Config]>;
   };
 }
