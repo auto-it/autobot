@@ -1,7 +1,8 @@
 import { ExecutionScope, Hooks } from "./autobot";
 
 /**
- * Do not directly extend from this class
+ * Do not directly extend from this class unless you're
+ * created a new category of plugin.
  */
 export abstract class Plugin {
   abstract name: string;

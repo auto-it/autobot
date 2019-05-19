@@ -35,6 +35,7 @@ export interface Hooks {
     onEnd: SyncHook<[]>;
   };
   [ExecutionScope.PullRequest]: {
+    /** Allows a plugin to modify the config before it's used anywhere */
     modifyConfig: AsyncSeriesWaterfallHook<[Config]>;
     /**
      * If a plugin tapped into this method returns `true`, processing of the current
@@ -126,6 +127,11 @@ export class Autobot {
 
   // Start of the public API
 
+  /**
+   * Factory method used to create and start a new instance of `Autobot`
+   * @param app The Probot app instance
+   * @param plugins An array of uninstantiated `Plugin` classes
+   */
   public static start(app: Application, plugins: UninitializedPlugin[]) {
     const autobot = new Autobot(plugins);
     autobot.hooks[ExecutionScope.App].onStart.call(app);
