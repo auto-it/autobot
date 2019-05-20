@@ -112,7 +112,7 @@ default_permissions:
   # https://developer.github.com/v3/apps/permissions/
   # organization_administration: read
 # The name of the GitHub App. Defaults to the name specified in package.json
-# name: My Probot App
+name: auto-it
 
 # The homepage of your GitHub App.
 url: https://github.com/auto-it/autobot
