@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "alias": "auto-it.now.sh",
+  "public": false,
+  "builds": [{ "src": "now.js", "use": "@now/node" }],
+  "env": {
+    "NODE_ENV": "production",
+    "APP_ID": "@autobot-app-id",
+    "WEBHOOK_SECRET": "@autobot-webhook-secret",
+    "PRIVATE_KEY": "@autobot-private-key"
+  }
+}
