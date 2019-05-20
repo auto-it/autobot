@@ -5,8 +5,8 @@
   "builds": [{ "src": "lib/now.js", "use": "@now/node" }],
   "env": {
     "NODE_ENV": "production",
-    "APP_ID": "@app-id",
-    "WEBHOOK_SECRET": "@webhook-secret",
-    "PRIVATE_KEY_BASE64": "@private-key-base64"
+    "APP_ID": "@autobot-app-id",
+    "WEBHOOK_SECRET": "@autobot-webhook-secret",
+    "PRIVATE_KEY": "@autobot-private-key"
   }
 }
