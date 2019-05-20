@@ -2,7 +2,7 @@ import { PullsCreateResponseLabelsItem as Label } from "@octokit/rest";
 import { fromPairs } from "lodash";
 import { PullRequestPlugin } from "../plugin";
 import { Config } from "../config";
-import { Hooks, PRContext, Status } from "../Autobot";
+import { Hooks, PRContext, Status } from "../autobot";
 import { intersection } from "lodash";
 
 const getConfigLabelPairs = (labels: Config["labels"]): [string, string][] =>
