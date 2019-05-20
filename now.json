@@ -2,7 +2,7 @@
   "version": 2,
   "alias": "auto-it.now.sh",
   "public": false,
-  "builds": [{ "src": "lib/now.js", "use": "@now/node" }],
+  "builds": [{ "src": "now.js", "use": "@now/node" }],
   "env": {
     "NODE_ENV": "production",
     "APP_ID": "@autobot-app-id",
