@@ -1,9 +1,6 @@
-// You can import your modules
-// import index from '../src/index'
-
 import nock from "nock";
 // Requiring our app implementation
-import myProbotApp from "../src";
+import myProbotApp from "../src/app";
 import { Probot } from "probot";
 // Requiring our fixtures
 import payload from "./fixtures/issues.opened.json";
@@ -11,7 +8,7 @@ const issueCreatedBody = { body: "Thanks for opening this issue!" };
 
 nock.disableNetConnect();
 
-describe("My Probot app", () => {
+describe.skip("My Probot app", () => {
   let probot: Probot;
 
   beforeEach(() => {
