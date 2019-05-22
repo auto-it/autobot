@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "auto": "^4.8.13",
+    "await-to-js": "^2.1.1",
     "axios": "^0.18.0",
     "lodash": "^4.17.11",
     "pino": "^5.12.5",
