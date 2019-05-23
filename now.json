@@ -8,5 +8,6 @@
     "APP_ID": "@autobot-app-id",
     "WEBHOOK_SECRET": "@autobot-webhook-secret",
     "PRIVATE_KEY": "@autobot-private-key"
-  }
+  },
+  "routes": [{ "src": "/", "dest": "/now.js" }]
 }
