@@ -9,6 +9,6 @@ export = (app: Application) => {
   const autobot = Autobot.start(app, features);
 
   app.on("pull_request", async context => {
-    autobot.onPullRequestReceived(context);
+    await autobot.onPullRequestReceived(context);
   });
 };

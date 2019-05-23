@@ -11,6 +11,7 @@ import { WebhookPayloadPullRequest } from "@octokit/webhooks";
 import { fetchConfig, Config } from "./config";
 import { Plugin, AppPlugin, PullRequestPlugin, UninitializedPlugin } from "./plugin";
 import { ReposCreateStatusParams } from "@octokit/rest";
+import to from "await-to-js";
 
 /**
  * Used to describe the different environments a plugin can run in. All
@@ -28,6 +29,8 @@ export enum ExecutionScope {
 
 export type PRContext = Context<WebhookPayloadPullRequest>;
 export type Status = Pick<ReposCreateStatusParams, "state" | "description">;
+
+type PRHookNames = keyof Hooks["pr"];
 
 export interface Hooks {
   [ExecutionScope.App]: {
@@ -69,6 +72,12 @@ export interface Hooks {
      * the status being reported to GitHub. It defaults to `success` with no message.
      */
     modifyCompleteStatus: AsyncSeriesWaterfallHook<[Status, PRContext, Config]>;
+    /**
+     * Hook that's called if there's at any point in the hooks process. It provides
+     * both the hook name, and the error that caused the failure so the hooks can
+     * appropriately clean up.
+     */
+    onError: SyncHook<[PRHookNames, Error]>;
   };
 }
 
@@ -91,6 +100,7 @@ export class Autobot {
         modifyPendingStatusMessage: new AsyncSeriesWaterfallHook(["message", "context", "config"]),
         process: new AsyncSeriesHook(["context", "config"]),
         modifyCompleteStatus: new AsyncSeriesWaterfallHook(["status", "context", "config"]),
+        onError: new SyncHook(["hookName", "error"]),
       },
     };
     this.initializePlugins(ExecutionScope.App);
@@ -140,25 +150,81 @@ export class Autobot {
 
   public async onPullRequestReceived(context: PRContext) {
     this.initializePlugins(ExecutionScope.PullRequest);
-    const config = await this.getConfig(context);
-    const skip = await this.hooks.pr.shouldSkipAllProcessing.promise(context, config);
+
+    const [configError, config] = await to(this.getConfig(context));
+
+    if (configError) {
+      this.hooks.pr.onError.call("modifyConfig", configError);
+      throw configError;
+    }
+    if (config === undefined || config === null) throw new Error("Config not defined");
+
+    const [skipError, skip] = await to(this.hooks.pr.shouldSkipAllProcessing.promise(context, config));
+    if (skipError) {
+      this.hooks.pr.onError.call("shouldSkipAllProcessing", skipError);
+      throw skipError;
+    }
 
     if (skip) {
-      const status = await this.hooks.pr.modifySkipStatus.promise({ state: "success" }, context, config);
-      await this.setStatus(context, status);
-      await this.hooks.pr.onSkip.promise(context, config);
-      return;
+      const [errorModifySkipStatus, skipStatus] = await to(
+        this.hooks.pr.modifySkipStatus.promise({ state: "success" }, context, config),
+      );
+      if (errorModifySkipStatus) {
+        this.hooks.pr.onError.call("modifySkipStatus", errorModifySkipStatus);
+        throw errorModifySkipStatus;
+      }
+      if (!skipStatus) throw new Error("Skip status isn't defined");
+
+      const [setStatusError] = await to(this.setStatus(context, skipStatus));
+      if (setStatusError) {
+        this.hooks.pr.onError.call("onSkip", setStatusError);
+        throw setStatusError;
+      }
+
+      const [onSkipError] = await to(this.hooks.pr.onSkip.promise(context, config));
+      if (onSkipError) {
+        this.hooks.pr.onError.call("onSkip", onSkipError);
+        throw onSkipError;
+      }
     }
 
     // Set pending status
-    let pendingMessage = "Validating auto setup";
-    pendingMessage = await this.hooks.pr.modifyPendingStatusMessage.promise(pendingMessage, context, config);
-    this.setStatus(context, { state: "pending", description: pendingMessage });
+    let pendingMessage: string | undefined = "Validating auto setup";
+    let pendingMessageError;
 
-    await this.hooks.pr.process.promise(context, config);
+    [pendingMessageError, pendingMessage] = await to(
+      this.hooks.pr.modifyPendingStatusMessage.promise(pendingMessage, context, config),
+    );
+
+    if (pendingMessageError) {
+      this.hooks.pr.onError.call("modifyPendingStatusMessage", pendingMessageError);
+      throw pendingMessageError;
+    }
+
+    const [pendingStatusError] = await to(this.setStatus(context, { state: "pending", description: pendingMessage }));
+    if (pendingStatusError) {
+      this.hooks.pr.onError.call("modifyPendingStatusMessage", pendingStatusError);
+      throw pendingStatusError;
+    }
+
+    const [processError] = await to(this.hooks.pr.process.promise(context, config));
+    if (processError) {
+      this.hooks.pr.onError.call("process", processError);
+      throw processError;
+    }
 
     // Set complete status
-    const completeStatus = await this.hooks.pr.modifyCompleteStatus.promise({ state: "success" }, context, config);
-    this.setStatus(context, completeStatus);
+    const [completeStatusError, completeStatus] = await to(
+      this.hooks.pr.modifyCompleteStatus.promise({ state: "success" }, context, config),
+    );
+    if (completeStatusError) {
+      this.hooks.pr.onError.call("modifyCompleteStatus", completeStatusError);
+    }
+    if (!completeStatus) throw new Error("Complete status not defined");
+
+    const [setCompleteStatusError] = await to(this.setStatus(context, completeStatus));
+    if (setCompleteStatusError) {
+      this.hooks.pr.onError.call("modifyCompleteStatus", setCompleteStatusError);
+    }
   }
 }
