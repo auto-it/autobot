@@ -109,7 +109,7 @@ export class Autobot {
     this.initializePlugins(ExecutionScope.App);
   }
 
-  private initializePlugins(scope: ExecutionScope) {
+  private initializePlugins(scope: ExecutionScope, context?: PRContext) {
     const scopePluginInstances = <T extends Plugin>() =>
       this.plugins.filter(plugin => plugin.scope === scope).map(Plugin => new Plugin()) as T[];
 
@@ -117,7 +117,8 @@ export class Autobot {
       case ExecutionScope.App:
         return scopePluginInstances<AppPlugin>().forEach(plugin => plugin.apply(this.hooks));
       case ExecutionScope.PullRequest:
-        return scopePluginInstances<PullRequestPlugin>().forEach(plugin => plugin.apply(this.hooks.pr));
+        if (!context) throw new Error("PR Context must be provided to each initialized plugin");
+        return scopePluginInstances<PullRequestPlugin>().forEach(plugin => plugin.apply(this.hooks.pr, context));
       default:
         throw new Error(`Attempting to intiailize plugins in unknown execution scope ${scope}`);
     }
@@ -189,6 +190,12 @@ export class Autobot {
         this.hooks.pr.onError.call("onSkip", onSkipError);
         throw onSkipError;
       }
+      return;
+    }
+
+    if (!this.hooks.pr.process.isUsed()) {
+      logger.info("No plugins contain PR processing");
+      return;
     }
 
     // Set pending status
