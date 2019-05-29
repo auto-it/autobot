@@ -1,13 +1,19 @@
 import pino from "pino";
-export const rootLogger = pino();
-export const getLogger = (namespace: string) => rootLogger.child({ namespace });
 
 const { NODE_ENV: env } = process.env;
 
-if (env === "production") {
+const isProduction = env === "production";
+let prettyPrint = !isProduction;
+
+if (prettyPrint) {
+  prettyPrint = require("pino-pretty");
+}
+
+export const rootLogger = pino({ base: {}, prettyPrint });
+export const getLogger = (namespace: string) => rootLogger.child({ namespace });
+
+if (isProduction) {
   rootLogger.level = "info";
-} else if (env === "development") {
-  rootLogger.level = "debug";
 } else {
-  rootLogger.level = "silent";
+  rootLogger.level = "debug";
 }
