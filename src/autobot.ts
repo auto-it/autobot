@@ -153,7 +153,7 @@ export class Autobot {
   }
 
   public async onPullRequestReceived(context: PRContext) {
-    this.initializePlugins(ExecutionScope.PullRequest);
+    this.initializePlugins(ExecutionScope.PullRequest, context);
 
     const [configError, config] = await to(this.getConfig(context));
 
