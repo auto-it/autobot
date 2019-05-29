@@ -1,4 +1,4 @@
-import { ExecutionScope, Hooks } from "./autobot";
+import { ExecutionScope, Hooks, PRContext } from "./autobot";
 
 /**
  * Do not directly extend from this class unless you're
@@ -19,7 +19,7 @@ export abstract class AppPlugin extends Plugin {
 
 export abstract class PullRequestPlugin extends Plugin {
   public static scope = ExecutionScope.PullRequest;
-  abstract apply(hooks: Hooks[ExecutionScope.PullRequest]): void;
+  abstract apply(hooks: Hooks[ExecutionScope.PullRequest], context: PRContext): void;
 }
 
 export type UninitializedPlugin = typeof AppPlugin | typeof PullRequestPlugin;

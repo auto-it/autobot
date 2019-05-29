@@ -20,7 +20,6 @@ export default class FailIfMissingLabels extends PullRequestPlugin {
   private failed = false;
 
   public apply(prHooks: Hooks["pr"]) {
-    logger.info({ func: this.isMissingRequiredLabels.bind(this) });
     prHooks.shouldSkipAllProcessing.tapPromise(this.name, this.isMissingRequiredLabels.bind(this));
     prHooks.modifySkipStatus.tapPromise(this.name, this.setSkipStatus.bind(this));
   }
