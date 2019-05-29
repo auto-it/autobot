@@ -4,9 +4,9 @@ import merge from "deepmerge";
 import axios from "axios";
 import { property, isPlainObject } from "lodash";
 import { defaultLabelDefinition } from "auto/dist/release";
-import { logger as rootLogger } from "./logger";
+import { getLogger } from "./utils/logger";
 
-const logger = rootLogger.child({ module: __filename });
+const logger = getLogger("config");
 
 type LabelConfig =
   | string

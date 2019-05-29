@@ -4,6 +4,10 @@ import { PullRequestPlugin } from "../plugin";
 import { Config } from "../config";
 import { Hooks, PRContext, Status } from "../autobot";
 import { intersection } from "lodash";
+import { getLogger } from "../utils/logger";
+import { formattedRepoName } from "../utils/pr-context";
+
+const logger = getLogger("fail-if-no-release-label");
 
 const getConfigLabelPairs = (labels: Config["labels"]): [string, string][] =>
   Object.entries(labels).map(([labelKey, label]) => [
@@ -20,13 +24,18 @@ export default class FailIfMissingLabels extends PullRequestPlugin {
     prHooks.modifySkipStatus.tapPromise(this.name, this.setSkipStatus.bind(this));
   }
 
-  private async setSkipStatus(status: Status): Promise<Status> {
-    return this.failed
-      ? {
-          state: "failure",
-          description: "Missing version or skip-release labels",
-        }
-      : status;
+  private async setSkipStatus(status: Status, context: PRContext): Promise<Status> {
+    if (this.failed) {
+      logger.info(`${formattedRepoName(context)} PR #${context.payload.number} missing required version labels`, {
+        url: context.url,
+      });
+      return {
+        state: "failure",
+        description: "Missing version or skip-release labels",
+      };
+    }
+
+    return status;
   }
 
   private async isMissingRequiredLabels(context: PRContext, config: Config) {

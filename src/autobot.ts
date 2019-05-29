@@ -12,6 +12,9 @@ import { fetchConfig, Config } from "./config";
 import { Plugin, AppPlugin, PullRequestPlugin, UninitializedPlugin } from "./plugin";
 import { ReposCreateStatusParams } from "@octokit/rest";
 import to from "await-to-js";
+import { getLogger } from "./utils/logger";
+
+const logger = getLogger("autobot");
 
 /**
  * Used to describe the different environments a plugin can run in. All
@@ -219,12 +222,14 @@ export class Autobot {
     );
     if (completeStatusError) {
       this.hooks.pr.onError.call("modifyCompleteStatus", completeStatusError);
+      throw completeStatusError;
     }
     if (!completeStatus) throw new Error("Complete status not defined");
 
     const [setCompleteStatusError] = await to(this.setStatus(context, completeStatus));
     if (setCompleteStatusError) {
       this.hooks.pr.onError.call("modifyCompleteStatus", setCompleteStatusError);
+      throw setCompleteStatusError;
     }
   }
 }
