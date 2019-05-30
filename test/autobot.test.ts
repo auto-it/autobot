@@ -25,7 +25,6 @@ describe("autobot", () => {
     const autobot = Autobot.start(app, []);
     // @ts-ignore
     autobot.getConfig = jest.fn().mockImplementation(() => Promise.resolve({}));
-    jest.fn().mockResolvedValueOnce;
 
     type ConfigResult = Promise<never | object>;
     const withConfig = (fnOrObj: (() => ConfigResult) | any) => {
