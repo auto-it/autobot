@@ -3,7 +3,7 @@ import nock from "nock";
 import myProbotApp from "../src/app";
 import { Probot } from "probot";
 // Requiring our fixtures
-import payload from "./fixtures/issues.opened.json";
+import payload from "./fixtures/issues.opened";
 const issueCreatedBody = { body: "Thanks for opening this issue!" };
 
 nock.disableNetConnect();
