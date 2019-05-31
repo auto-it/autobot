@@ -7,7 +7,7 @@ import { intersection } from "lodash";
 import { getLogger } from "../utils/logger";
 import { formattedRepoName } from "../utils/pr-context";
 
-const logger = getLogger("fail-if-no-release-label");
+const logger = getLogger("block-if-missing-labels");
 
 const getConfigLabelPairs = (labels: Config["labels"]): [string, string][] =>
   Object.entries(labels).map(([labelKey, label]) => [
@@ -15,23 +15,24 @@ const getConfigLabelPairs = (labels: Config["labels"]): [string, string][] =>
     typeof label === "string" ? label : label.name ? label.name : labelKey,
   ]);
 
-export default class FailIfMissingLabels extends PullRequestPlugin {
-  public name = "FailIfNoReleaseLabels";
+export class BlockIfMissingLabels extends PullRequestPlugin {
+  public name = "BlockIfMissingLabels";
   private failed = false;
 
   public apply(prHooks: Hooks["pr"]) {
-    prHooks.shouldSkipAllProcessing.tapPromise(this.name, this.isMissingRequiredLabels.bind(this));
-    prHooks.modifySkipStatus.tapPromise(this.name, this.setSkipStatus.bind(this));
+    logger.debug(`Applying hooks for ${this.name}`);
+    prHooks.process.tapPromise(this.name, this.isMissingRequiredLabels.bind(this));
+    prHooks.modifyCompleteStatus.tapPromise(this.name, this.setStatus.bind(this));
   }
 
-  private async setSkipStatus(status: Status, context: PRContext): Promise<Status> {
+  private async setStatus(status: Status, context: PRContext): Promise<Status> {
     if (this.failed) {
       logger.info(`${formattedRepoName(context)} PR #${context.payload.number} missing required version labels`, {
         url: context.url,
       });
       return {
-        state: "failure",
-        description: "Missing version or skip-release labels",
+        state: "pending",
+        description: "Waiting for valid release labels",
       };
     }
 
@@ -42,6 +43,8 @@ export default class FailIfMissingLabels extends PullRequestPlugin {
     const prLabels: string[] = (context.payload.pull_request.labels as Label[]).map(label => label.name);
     const configLabels = fromPairs(getConfigLabelPairs(config.labels));
 
+    logger.debug({ prLabels, configLabels });
+
     const hasMajor = prLabels.includes(configLabels.major);
     const hasMinor = prLabels.includes(configLabels.minor);
     const hasPatch = prLabels.includes(configLabels.patch);
@@ -51,8 +54,8 @@ export default class FailIfMissingLabels extends PullRequestPlugin {
 
     if (!hasMajor && !hasMinor && !hasPatch && !hasSkipReleaseLabels) {
       this.failed = true;
-      return true;
+    } else {
+      this.failed = false;
     }
-    return;
   }
 }
