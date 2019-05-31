@@ -1,9 +1,9 @@
 import { Application } from "probot"; // eslint-disable-line no-unused-vars
 import { Autobot } from "./autobot";
 
-import FailIfNoReleaseLabels from "./features/fail-if-no-release-labels";
+import { BlockIfMissingLabels } from "./features/block-if-missing-labels";
 
-const features = [FailIfNoReleaseLabels];
+const features = [BlockIfMissingLabels];
 
 export = (app: Application) => {
   const autobot = Autobot.start(app, features);

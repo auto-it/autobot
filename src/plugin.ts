@@ -22,4 +22,4 @@ export abstract class PullRequestPlugin extends Plugin {
   abstract apply(hooks: Hooks[ExecutionScope.PullRequest], context: PRContext): void;
 }
 
-export type UninitializedPlugin = typeof AppPlugin | typeof PullRequestPlugin;
+export type UninstantiatedPlugin = typeof AppPlugin | typeof PullRequestPlugin;

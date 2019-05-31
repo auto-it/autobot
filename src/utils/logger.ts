@@ -1,9 +1,6 @@
 import pino from "pino";
 
-const { NODE_ENV: env } = process.env;
-
-const isProduction = env === "production";
-const isTest = env === "test";
+import { isProduction, isTest } from "./env";
 
 let prettyPrint = !isProduction;
 
