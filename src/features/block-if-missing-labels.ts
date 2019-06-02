@@ -15,9 +15,25 @@ const getConfigLabelPairs = (labels: Config["labels"]): [string, string][] =>
     typeof label === "string" ? label : label.name ? label.name : labelKey,
   ]);
 
+export enum LabelError {
+  NoLabels,
+  ConflictingLabels,
+}
+
+export enum ReleaseType {
+  Major = "major",
+  Minor = "minor",
+  Patch = "patch",
+}
+
+interface ReleaseMode {
+  type: ReleaseType;
+  skip: boolean;
+}
+
 export class BlockIfMissingLabels extends PullRequestPlugin {
   public name = "BlockIfMissingLabels";
-  private failed = false;
+  private releaseState: ReleaseMode | LabelError = LabelError.NoLabels;
 
   public apply(prHooks: Hooks["pr"]) {
     logger.debug(`Applying hooks for ${this.name}`);
@@ -25,8 +41,8 @@ export class BlockIfMissingLabels extends PullRequestPlugin {
     prHooks.modifyCompleteStatus.tapPromise(this.name, this.setStatus.bind(this));
   }
 
-  private async setStatus(status: Status, context: PRContext): Promise<Status> {
-    if (this.failed) {
+  private async setStatus(_status: Status, context: PRContext): Promise<Status> {
+    if (this.releaseState === LabelError.NoLabels) {
       logger.info(`${formattedRepoName(context)} PR #${context.payload.number} missing required version labels`, {
         url: context.url,
       });
@@ -34,9 +50,22 @@ export class BlockIfMissingLabels extends PullRequestPlugin {
         state: "pending",
         description: "Waiting for valid release labels",
       };
+    } else if (this.releaseState === LabelError.ConflictingLabels) {
+      return {
+        state: "error",
+        description: "Conflicting version labels",
+      };
+    } else if (this.releaseState.skip) {
+      return {
+        state: "success",
+        description: `Skipping release for this ${this.releaseState.type} version`,
+      };
+    } else {
+      return {
+        state: "success",
+        description: `A ${this.releaseState.type} version will release when merged`,
+      };
     }
-
-    return status;
   }
 
   private async isMissingRequiredLabels(context: PRContext, config: Config) {
@@ -53,9 +82,14 @@ export class BlockIfMissingLabels extends PullRequestPlugin {
     const hasSkipReleaseLabels = intersection(skipReleaseLabels, prLabels).length > 0;
 
     if (!hasMajor && !hasMinor && !hasPatch && !hasSkipReleaseLabels) {
-      this.failed = true;
+      this.releaseState = LabelError.NoLabels;
+    } else if ((hasMajor && hasMinor) || (hasMajor && hasPatch) || (hasMajor && hasPatch)) {
+      this.releaseState = LabelError.ConflictingLabels;
     } else {
-      this.failed = false;
+      this.releaseState = {
+        type: (hasMajor && ReleaseType.Major) || (hasMinor && ReleaseType.Minor) || ReleaseType.Patch,
+        skip: hasSkipReleaseLabels,
+      };
     }
   }
 }
