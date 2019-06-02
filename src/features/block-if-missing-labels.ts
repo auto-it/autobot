@@ -63,7 +63,7 @@ export class BlockIfMissingLabels extends PullRequestPlugin {
     } else {
       return {
         state: "success",
-        description: `A ${this.releaseState.type} version will release when merged`,
+        description: `This PR will release a ${this.releaseState.type} version`,
       };
     }
   }
