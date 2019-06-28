@@ -10,7 +10,7 @@ import { isProduction } from "./utils/env";
 import { fromPairs } from "lodash";
 
 const logger = getLogger("autobot");
-const STATUS_CONTEXT = isProduction ? "auto-bot" : "auto-bot-dev";
+const STATUS_CONTEXT = isProduction ? "auto" : "auto-dev";
 
 /**
  * Used to describe the different environments a plugin can run in. All
