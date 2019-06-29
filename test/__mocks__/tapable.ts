@@ -35,9 +35,12 @@ const testHookBuilder = (name: string) =>
         });
       };
 
-export const SyncBailHook = testHookBuilder("SyncBailHook");
 export const SyncHook = testHookBuilder("SyncHook");
-export const AsyncSeriesWaterfallHook = testHookBuilder("AsyncSeriesWaterfallHook");
-export const AsyncSeriesHook = testHookBuilder("AsyncSeriesHook");
-export const AsyncParallelBailHook = testHookBuilder("AsyncParallelBailHook");
+export const SyncBailHook = testHookBuilder("SyncBailHook");
+export const SyncWaterfallHook = testHookBuilder("SyncWaterfallHook");
+export const SyncLoopHook = testHookBuilder("SyncLoopHook");
 export const AsyncParallelHook = testHookBuilder("AsyncParallelHook");
+export const AsyncParallelBailHook = testHookBuilder("AsyncParallelBailHook");
+export const AsyncSeriesHook = testHookBuilder("AsyncSeriesHook");
+export const AsyncSeriesBailHook = testHookBuilder("AsyncSeriesBailHook");
+export const AsyncSeriesWaterfallHook = testHookBuilder("AsyncSeriesWaterfallHook");
