@@ -1,4 +1,11 @@
-import { SyncBailHook, SyncHook, AsyncSeriesWaterfallHook, AsyncSeriesHook } from "tapable";
+import {
+  SyncBailHook,
+  SyncHook,
+  AsyncSeriesWaterfallHook,
+  AsyncSeriesHook,
+  AsyncParallelHook,
+  AsyncSeriesBailHook,
+} from "tapable";
 import { Application, Context } from "probot";
 import { WebhookPayloadPullRequest } from "@octokit/webhooks";
 import { fetchConfig, Config } from "./config";
@@ -8,6 +15,7 @@ import to from "await-to-js";
 import { getLogger } from "./utils/logger";
 import { isProduction } from "./utils/env";
 import { fromPairs } from "lodash";
+import { Release } from "./models/release";
 
 const logger = getLogger("autobot");
 const STATUS_CONTEXT = isProduction ? "auto" : "auto-dev";
@@ -45,6 +53,18 @@ export interface Hooks {
      * `pending` state.
      */
     modifyPendingStatusMessage: AsyncSeriesWaterfallHook<[string, PRContext, Config]>;
+
+    /**
+     * The point at which the type of release is determined. This can be hooked into
+     * to generate releases in ways other than by label.
+     */
+    calculateReleaseType: AsyncSeriesBailHook<[PRContext, Config], Release<any>>;
+
+    /**
+     * A hook that provides the release type to any subscribing plugins. It'll either
+     * be a `ValidRelease` or `InvalidRelease`. See the release model for more details.
+     */
+    onReleaseType: AsyncParallelHook<[Release<any>]>;
     /**
      * The meat and potatoes of the pr plugins. This is the plugin's time to do whatever it
      * needs to do to the PR.
@@ -103,6 +123,8 @@ export class Autobot {
       [ExecutionScope.PullRequest]: {
         modifyConfig: new AsyncSeriesWaterfallHook(["config"]),
         modifyPendingStatusMessage: new AsyncSeriesWaterfallHook(["message", "context", "config"]),
+        calculateReleaseType: new AsyncSeriesBailHook(["context", "config"]),
+        onReleaseType: new AsyncParallelHook(["release"]),
         process: new AsyncSeriesHook(["context", "config"]),
         modifyCompleteStatus: new AsyncSeriesWaterfallHook(["status", "context", "config"]),
         onError: new SyncHook(["hookName", "error"]),
@@ -207,6 +229,22 @@ export class Autobot {
     if (pendingStatusError) {
       this.hooks.pr.onError.call("modifyPendingStatusMessage", pendingStatusError);
       throw pendingStatusError;
+    }
+
+    const [calculateReleaseTypeError, releaseType] = await to(
+      this.hooks.pr.calculateReleaseType.promise(context, config),
+    );
+    if (calculateReleaseTypeError) {
+      this.hooks.pr.onError.call("calculateReleaseType", calculateReleaseTypeError);
+      throw calculateReleaseTypeError;
+    }
+    if (!releaseType) throw new Error("calculateReleaseType failed to return a release");
+
+    const [onReleaseTypeError] = await to(this.hooks.pr.onReleaseType.promise(releaseType));
+
+    if (onReleaseTypeError) {
+      this.hooks.pr.onError.call("onReleaseType", onReleaseTypeError);
+      throw onReleaseTypeError;
     }
 
     const [processError] = await to(this.hooks.pr.process.promise(context, config));
