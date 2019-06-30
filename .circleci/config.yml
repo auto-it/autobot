@@ -1,0 +1,12 @@
+version: 2.1
+
+orbs:
+  yarn: artsy/yarn@2.0.0
+
+workflows:
+  build_and_verify:
+    jobs:
+      - yarn/update-cache
+      - yarn/lint
+      - yarn/type-check
+      - yarn/jest
