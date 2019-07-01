@@ -1,3 +1,9 @@
 {
-  "typescript.tsdk": "node_modules/typescript/lib"
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "files.exclude": {
+    "pages/**/*.js*": true,
+    "pages/**/*.d.ts": true,
+    "lib/**/*.js*": true,
+    "lib/**/*.d.ts": true
+  }
 }

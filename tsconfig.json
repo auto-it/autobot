@@ -2,6 +2,7 @@
   "compilerOptions": {
     "allowJs": false,
     "lib": ["es2015", "es2017"],
+    "jsx": "react",
     "module": "commonjs",
     "moduleResolution": "node",
     "target": "es5",
@@ -11,7 +12,6 @@
     "pretty": true,
     "strict": true,
     "sourceMap": true,
-    "outDir": "./lib",
     "skipLibCheck": true,
     "noImplicitAny": true,
     "esModuleInterop": true,
@@ -19,6 +19,6 @@
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true
   },
-  "include": ["src/**/*"],
+  "include": ["lib/**/*", "pages/**/*", "types/*"],
   "compileOnSave": false
 }

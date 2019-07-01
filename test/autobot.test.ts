@@ -1,4 +1,4 @@
-import { Autobot, PRContext } from "../src/autobot";
+import { Autobot, PRContext } from "../lib/autobot";
 import { Application } from "probot";
 
 const app = (Symbol("app") as unknown) as Application;
