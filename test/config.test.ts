@@ -1,4 +1,4 @@
-import { fetchExtendedURLConfig, fetchExtendedRelativeConfig } from "../src/config";
+import { fetchExtendedURLConfig, fetchExtendedRelativeConfig } from "../lib/config";
 import nock from "nock";
 
 const mockRequest = (url: string) => nock(url).defaultReplyHeaders({ "access-control-allow-origin": "*" });

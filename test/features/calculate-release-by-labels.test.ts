@@ -1,8 +1,8 @@
-import { CalculateReleaseByLabels } from "../../src/features/calculate-release-by-labels";
-import { PRContext } from "../../src/autobot";
-import { Config } from "../../src/config";
-import { LabelError } from "../../src/features/calculate-release-by-labels";
-import { ReleaseType } from "../../src/models/release";
+import { CalculateReleaseByLabels } from "../../lib/features/calculate-release-by-labels";
+import { PRContext } from "../../lib/autobot";
+import { Config } from "../../lib/config";
+import { LabelError } from "../../lib/features/calculate-release-by-labels";
+import { ReleaseType } from "../../lib/models/release";
 
 describe("CalculateReleaseByLabels", () => {
   const context = (...labels: string[]) =>
