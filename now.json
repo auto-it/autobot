@@ -2,7 +2,7 @@
   "version": 2,
   "alias": "auto-it.now.sh",
   "public": false,
-  "builds": [{ "src": "now.js", "use": "@now/node" }],
+  "builds": [{ "src": "now.js", "use": "@now/node" }, { "src": "lib/lambdas/*.ts", "use": "@now/node" }],
   "env": {
     "NODE_ENV": "production",
     "APP_ID": "@autobot-app-id",
@@ -10,5 +10,5 @@
     "PRIVATE_KEY": "@autobot-private-key",
     "SENTRY_DSN": "@sentry-dsn"
   },
-  "routes": [{ "src": "/", "dest": "/now.js" }]
+  "routes": [{ "src": "/", "dest": "/now.js" }, { "src": "/lambda/label", "dest": "/lib/lambdas/label.ts" }]
 }

@@ -1,4 +1,10 @@
 node_modules
 .env
-lib
 .rts2*
+.next
+*-error.log
+
+lib/**/*.js*
+lib/**/*.d.ts
+pages/**/*.js*
+pages/**/*.d.ts
