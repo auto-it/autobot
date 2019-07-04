@@ -27,6 +27,7 @@
     "now-dev": "yarn dev:build"
   },
   "dependencies": {
+    "@primer/octicons": "^9.1.1",
     "auto": "^4.8.13",
     "await-to-js": "^2.1.1",
     "axios": "^0.18.0",
