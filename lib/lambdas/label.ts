@@ -95,6 +95,6 @@ export = async (req: NowRequest, res: NowResponse) => {
       .status(200)
       .send(svg(text, await calcWidth(text), stringifyHex(rgbColor), calcShadow(rgbColor), calcFontColor(rgbColor)));
   } else {
-    return res.status(500).send("Invalid query parameters, ensure color and text are present");
+    return res.status(400).send("Invalid query parameters, ensure color and text are present");
   }
 };

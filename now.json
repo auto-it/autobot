@@ -3,9 +3,18 @@
   "alias": "auto-it.now.sh",
   "public": false,
   "builds": [
-    { "src": "now.js", "use": "@now/node" },
-    { "src": "lib/lambdas/*.ts", "use": "@now/node" },
-    { "src": "public/*", "use": "@now/static" }
+    {
+      "src": "now.js",
+      "use": "@now/node"
+    },
+    {
+      "src": "lib/lambdas/*.ts",
+      "use": "@now/node"
+    },
+    {
+      "src": "public/*",
+      "use": "@now/static"
+    }
   ],
   "env": {
     "NODE_ENV": "production",
@@ -14,5 +23,18 @@
     "PRIVATE_KEY": "@autobot-private-key",
     "SENTRY_DSN": "@sentry-dsn"
   },
-  "routes": [{ "src": "/", "dest": "/now.js" }, { "src": "/lambda/label", "dest": "/lib/lambdas/label.ts" }]
+  "routes": [
+    {
+      "src": "/",
+      "dest": "/now.js"
+    },
+    {
+      "src": "/lambda/label",
+      "dest": "/lib/lambdas/label.ts"
+    },
+    {
+      "src": "/lambda/octicon/([^/]+)",
+      "dest": "/lambda/octicon.ts?icon=$1"
+    }
+  ]
 }
