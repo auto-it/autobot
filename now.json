@@ -29,15 +29,15 @@
       "dest": "/now.js"
     },
     {
-      "src": "/l/(.*)",
-      "dest": "/lib/lambdas/$1"
-    },
-    {
       "src": "/lambda/label",
       "dest": "/lib/lambdas/label.ts"
     },
     {
-      "src": "/lib/lambdas/octicon/([^/]+)",
+      "src": "/l/label",
+      "dest": "/lib/lambdas/label.ts"
+    },
+    {
+      "src": "/l/octicon/([^/]+)",
       "dest": "/lib/lambdas/octicon.ts?icon=$1"
     }
   ]
