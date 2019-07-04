@@ -11,6 +11,8 @@ export = async (req: NowRequest, res: NowResponse) => {
   } else {
     res.setHeader("Content-Type", "image/svg+xml");
     res.setHeader("Cache-Control", "s-maxage=31536000, max-age=31536000");
-    return res.status(200).send(Octicons[icon].toSVG({ height: 16 * parseInt(size) }));
+    let svg = Octicons[icon].toSVG({ height: 16 * parseInt(size) });
+    svg = svg.slice(0, 4) + ' xmlns="http://www.w3.org/2000/svg" ' + svg.slice(4);
+    return res.status(200).send(svg);
   }
 };
