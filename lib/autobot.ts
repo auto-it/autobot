@@ -1,15 +1,8 @@
-import {
-  SyncBailHook,
-  SyncHook,
-  AsyncSeriesWaterfallHook,
-  AsyncSeriesHook,
-  AsyncParallelHook,
-  AsyncSeriesBailHook,
-} from "tapable";
+import { SyncHook, AsyncSeriesWaterfallHook, AsyncSeriesHook, AsyncParallelHook, AsyncSeriesBailHook } from "tapable";
 import { Application, Context } from "probot";
 import { WebhookPayloadPullRequest } from "@octokit/webhooks";
 import { fetchConfig, Config } from "./config";
-import { Plugin, AppPlugin, PullRequestPlugin, UninstantiatedPlugin } from "./plugin";
+import { Plugin, AppPlugin, PullRequestPlugin, UninstantiatedPlugin, PullRequestAction } from "./plugin";
 import { ReposCreateStatusParams } from "@octokit/rest";
 import to from "await-to-js";
 import { getLogger } from "./utils/logger";
@@ -41,7 +34,7 @@ type PRHookNames = keyof Hooks["pr"];
 
 export interface Hooks {
   [ExecutionScope.App]: {
-    onStart: SyncBailHook<[Application], Autobot>;
+    onStart: SyncHook<[Application]>;
     onEnd: SyncHook<[]>;
   };
   [ExecutionScope.PullRequest]: {
@@ -117,7 +110,7 @@ export class Autobot {
 
     this.hooks = {
       [ExecutionScope.App]: {
-        onStart: new SyncBailHook(["app"]),
+        onStart: new SyncHook(["app"]),
         onEnd: new SyncHook(),
       },
       [ExecutionScope.PullRequest]: {
@@ -140,11 +133,11 @@ export class Autobot {
         .filter(({ plugin }) => plugin.scope === scope)
         .map(
           ({ name, plugin: Plugin }) =>
-            (this.plugins[name] = {
+            ({
               initialized: true,
               plugin: new Plugin() as T,
               name,
-            }),
+            } as const),
         );
 
     switch (scope) {
@@ -164,8 +157,13 @@ export class Autobot {
         logger.debug(`${prPlugins.length} ${scope} plugins initialized`);
 
         return prPlugins.forEach(meta => {
-          meta.plugin.apply(this.hooks.pr, context);
-          this.plugins[meta.name] = meta;
+          if (
+            meta.plugin.actions === "*" ||
+            meta.plugin.actions.includes(context.payload.action as PullRequestAction)
+          ) {
+            meta.plugin.apply(this.hooks.pr, context);
+            this.plugins[meta.name] = meta;
+          }
         });
 
       default:

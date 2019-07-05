@@ -1,5 +1,6 @@
 import { Autobot, PRContext } from "../lib/autobot";
 import { Application } from "probot";
+import { AppPlugin } from "../lib/plugin";
 
 const app = (Symbol("app") as unknown) as Application;
 const context = ({} as unknown) as PRContext;
@@ -19,6 +20,20 @@ describe("autobot", () => {
       // Ensures the default mock impl of call from tapable was called w/ the correct args
       expect.assertions(2);
     });
+
+    it("intializes app scope plugins", () => {
+      class TestAppPlugin extends AppPlugin {
+        public name = "TestAppPlugin";
+        public apply(hooks: import("../lib/autobot").Hooks): void {
+          hooks["app"].onStart.tap(this.name, () => {});
+        }
+      }
+      const autobot = Autobot.start(app, [TestAppPlugin]);
+      // @ts-ignore
+      expect(autobot.hooks.app.onStart.tap).toBeCalled();
+    });
+
+    it.todo("doesn't initialize PR plugins on start");
   });
 
   describe("onPullRequestReceived", () => {
@@ -39,6 +54,10 @@ describe("autobot", () => {
         (autobot.getConfig as jest.Mock<any, any>).mockImplementationOnce(() => Promise.resolve(fnOrObj));
       }
     };
+
+    it.todo("intializies PR plugins");
+
+    it.todo("doesn't initialize a PR with an unmatching action");
 
     it("rejects on a config error", async () => {
       withConfig(new Error("Failed to grab config"));

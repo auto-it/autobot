@@ -7,9 +7,8 @@ import { CalculateReleaseByLabels } from "./features/calculate-release-by-labels
 const features = [CalculateReleaseByLabels, BlockIfMissingLabels];
 
 export = (app: Application) => {
-  const autobot = Autobot.start(app, features);
-
   app.on("pull_request", async context => {
+    const autobot = Autobot.start(app, features);
     await autobot.onPullRequestReceived(context);
   });
 };

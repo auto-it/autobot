@@ -17,8 +17,26 @@ export abstract class AppPlugin extends Plugin {
   abstract apply(hooks: Hooks): void;
 }
 
+export type WebhookAction<T> = "*" | T[];
+export enum PullRequestAction {
+  assigned = "assigned",
+  unassigned = "unassigned",
+  labeled = "labeled",
+  unlabeled = "unlabeled",
+  opened = "opened",
+  edited = "edited",
+  closed = "closed",
+  reopened = "reopened",
+  ready_for_review = "ready_for_review",
+  locked = "locked",
+  unlocked = "unlocked",
+  review_requested = "review_requested",
+  review_request_removed = "review_request_removed",
+}
+
 export abstract class PullRequestPlugin extends Plugin {
   public static scope = ExecutionScope.PullRequest;
+  public actions: WebhookAction<PullRequestAction> = "*";
   abstract apply(hooks: Hooks[ExecutionScope.PullRequest], context: PRContext): void;
 }
 

@@ -25,6 +25,7 @@ const testHookBuilder = (name: string) =>
         public call = jest.fn().mockImplementation((...args) => {
           expect(args.length).toBe((this.opts || []).length);
         });
+        public tap = jest.fn();
       }
     : class AsyncTestHook extends BaseTestHook {
         public constructor(opts?: string[]) {
