@@ -4,6 +4,7 @@ import merge from "deepmerge";
 import axios from "axios";
 import { property, isPlainObject } from "lodash";
 import { getLogger } from "./utils/logger";
+import { LabelConfig } from "./models/label";
 
 // FIXME: Find a good way to extract this from auto
 const defaultLabelDefinition = {
@@ -48,15 +49,6 @@ const defaultLabelDefinition = {
 };
 
 const logger = getLogger("config");
-
-type LabelConfig =
-  | string
-  | {
-      name?: string;
-      title: string;
-      description: string;
-      color?: string;
-    };
 
 export interface Config {
   labels: {

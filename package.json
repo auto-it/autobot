@@ -32,6 +32,7 @@
     "await-to-js": "^2.1.1",
     "axios": "^0.18.0",
     "color-composite": "^0.1.0",
+    "dedent": "^0.7.0",
     "lodash": "^4.17.11",
     "opentype.js": "^1.1.0",
     "pino": "^5.12.5",
@@ -42,6 +43,7 @@
   },
   "devDependencies": {
     "@now/node": "^0.10.1",
+    "@types/dedent": "^0.7.0",
     "@types/jest": "^24.0.0",
     "@types/lodash": "^4.14.129",
     "@types/nock": "^9.3.0",
