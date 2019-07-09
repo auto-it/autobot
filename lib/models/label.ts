@@ -1,4 +1,5 @@
 import { PRContext } from "../autobot";
+import randomColor from "random-color";
 
 const domain = "https://autobot.auto-it.now.sh";
 
@@ -21,17 +22,22 @@ export const renderLabel = (color: string, text: string) =>
   `<img align="center" src="${domain}/l/label?color=${color}&text=${text}"/>`;
 
 // TODO: This should normalize the label to ensure it has all the info needed to be rendered
-export const populateLabel = async (label: LabelConfig, context: PRContext): NormalizedLabel => {
+export const populateLabel = async (
+  labelType: string,
+  label: LabelConfig,
+  context: PRContext,
+): Promise<NormalizedLabel> => {
   const { owner, repo } = context.repo();
   const { data: labels } = await context.github.issues.listLabelsForRepo({ owner, repo });
-  if (typeof label === "string") {
-    const fullLabel = labels.find(l => l.name === label);
-    if (fullLabel) {
-      const { name, description, color } = fullLabel;
-      return { name, description, color };
-    }
+  const labelText = typeof label === "string" ? label : label.name || labelType;
+  const fullLabel = labels.find(l => l.name === label);
+
+  if (fullLabel) {
+    const { name, description, color } = fullLabel;
+    return { name, description, color };
   } else {
-    // This case really shouldn't happen because the label _should_ be normalized before it's passed to this function
-    if (!label.name) throw new Error("Label must include a name");
+    const color = randomColor().hexString();
+    await context.github.issues.createLabel({ owner, repo, name: labelText, color });
+    return { name: labelText, description: "", color };
   }
 };

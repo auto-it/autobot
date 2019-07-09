@@ -5,7 +5,7 @@ import { LabelRelease, LabelError } from "./calculate-release-by-labels";
 import { Config } from "../config";
 import dedent from "dedent";
 import { createChecklist } from "../models/checklist";
-import { renderLabel } from "../models/label";
+import { renderLabel, populateLabel } from "../models/label";
 import { sub, italics, bold } from "../utils/markdown";
 
 const logger = getLogger("pr-onboarding");
@@ -26,7 +26,7 @@ export class PROnBoarding extends PullRequestPlugin {
   public apply(prHooks: Hooks["pr"]) {
     logger.debug(`Applying hooks for ${this.name}`);
     prHooks.onReleaseType.tap(this.name, this.checkLabels);
-    prHooks.process.tap(this.name, this.onBoard);
+    prHooks.process.tapPromise(this.name, this.onBoard);
   }
 
   private checkLabels = (release: LabelRelease) => {
@@ -37,7 +37,7 @@ export class PROnBoarding extends PullRequestPlugin {
     }
   };
 
-  private onBoard = (context: PRContext, config: Config) => {
+  private onBoard = async (context: PRContext, config: Config) => {
     // TODO: Check if feature is enabled
     if (context.payload.action === PullRequestAction.opened && this.hasLabels === false) {
       const { owner, repo, number: issue_number } = context.issue();
@@ -46,7 +46,10 @@ export class PROnBoarding extends PullRequestPlugin {
         owner,
         repo,
         issue_number,
-        body: context.payload.pull_request.body + "\n\n" + this.onBoardingMessage(this.createSections(context, config)),
+        body:
+          context.payload.pull_request.body +
+          "\n\n" +
+          this.onBoardingMessage(await this.createSections(context, config)),
       });
     }
   };
@@ -69,22 +72,33 @@ export class PROnBoarding extends PullRequestPlugin {
     ${MessageEnd} 
   `;
 
-  private createSections = (context: PRContext, config: Config, update = false) => {
+  private createSections = async (context: PRContext, config: Config, update = false) => {
+    const section = (title: string, checklist: string) => dedent`
+    ##
+
+    ${title}
+    
+    ${checklist}
+    `;
     const withDescription = (description: string) => `&nbsp;&nbsp;<sub><b>${description}</b></sub>`;
 
     const semverHead = sub(italics(`${bold("Semver Labels")} (choose at most one)`));
     const semverChecklist = createChecklist(
       "auto",
       "semver",
-      ["major", "minor", "patch"].map(labelType => {
-        const label = populateLabel(config.labels[labelType]);
+      await Promise.all(
+        ["major", "minor", "patch"].map(async labelType => {
+          const label = await populateLabel(labelType, config.labels[labelType], context);
 
-        return {
-          id: labelType,
-          checked: false,
-          body: `${renderLabel(label.color, label.name)} ${withDescription(label.description)}`,
-        };
-      }),
+          return {
+            id: labelType,
+            checked: false,
+            body: `${renderLabel(label.color, label.name)} ${withDescription(label.description)}`,
+          };
+        }),
+      ),
     );
+
+    return [section(semverHead, semverChecklist)];
   };
 }
