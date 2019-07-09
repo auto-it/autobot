@@ -1,7 +1,7 @@
 import { PullRequestPlugin } from "../plugin";
 import { Hooks, PRContext, Status } from "../autobot";
 import { getLogger } from "../utils/logger";
-import { formattedRepoName } from "../utils/pr-context";
+import { formattedRepoName } from "../models/pr-context";
 import { LabelRelease, LabelError } from "./calculate-release-by-labels";
 
 const logger = getLogger("block-if-missing-labels");
