@@ -4,7 +4,7 @@ import { Config } from "../config";
 import { Release, ReleaseType, invalidRelease, validRelease } from "../models/release";
 import { getLogger } from "../utils/logger";
 import { fromPairs, intersection } from "lodash";
-import { PullsCreateResponseLabelsItem as Label } from "@octokit/rest";
+import { getSkipReleaseLabelsFromConfig, labelToString, getLabelsOnPR } from "../models/label";
 
 const logger = getLogger("block-if-missing-labels");
 
@@ -31,7 +31,7 @@ export class CalculateReleaseByLabels extends PullRequestPlugin {
   private calculateRelease = async (context: PRContext, config: Config) => {
     let release: Release<LabelError>;
 
-    const prLabels: string[] = (context.payload.pull_request.labels as Label[]).map(label => label.name);
+    const prLabels: string[] = getLabelsOnPR(context).map(l => labelToString(l, ""));
     const configLabels = fromPairs(getConfigLabelPairs(config.labels));
 
     logger.debug({ prLabels, configLabels });
@@ -40,7 +40,9 @@ export class CalculateReleaseByLabels extends PullRequestPlugin {
     const hasMinor = prLabels.includes(configLabels.minor);
     const hasPatch = prLabels.includes(configLabels.patch);
 
-    const skipReleaseLabels = [config.labels["skip-release"], ...config.skipReleaseLabels];
+    const skipReleaseLabels: string[] = getSkipReleaseLabelsFromConfig(config).map(l =>
+      labelToString(l, "skip-release"),
+    );
     const hasSkipReleaseLabels = intersection(skipReleaseLabels, prLabels).length > 0;
 
     if (!hasMajor && !hasMinor && !hasPatch && !hasSkipReleaseLabels) {
