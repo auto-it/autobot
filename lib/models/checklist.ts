@@ -1,4 +1,5 @@
 import { get } from "../utils/get";
+import { slug } from "../utils/slug";
 
 // TODO: Implement duplication validation
 
@@ -25,7 +26,10 @@ const CHECK_DETAILS = /^-\[(x|X| )\] <!-- (\w+:\w+:\w+) --> (.*)/;
 
 export const createChecklist = (namespace: string, checklistId: string, items: ChecklistItem[]) =>
   items
-    .map(({ id, checked, body }) => `-[${checked ? "x" : " "}] <!-- ${namespace}:${checklistId}:${id} --> ${body}`)
+    .map(
+      ({ id, checked, body }) =>
+        `-[${checked ? "x" : " "}] <!-- ${slug(namespace)}:${slug(checklistId)}:${slug(id)} --> ${body}`,
+    )
     .join("\n");
 
 export const parseChecklists = (text: string) => {
