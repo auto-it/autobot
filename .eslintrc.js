@@ -10,5 +10,6 @@ module.exports = {
     "@typescript-eslint/no-explicit-any": false,
     "@typescript-eslint/camelcase": false,
     "@typescript-eslint/no-object-literal-type-assertion": false,
+    "@typescript-eslint/no-non-null-assertion": false,
   },
 };
