@@ -7,7 +7,6 @@ import dedent from "dedent";
 import { createChecklist } from "../models/checklist";
 import { renderLabel, populateLabel, getSkipReleaseLabelsFromConfig } from "../models/label";
 import { sub, italics, bold } from "../utils/markdown";
-import { slug } from "../utils/slug";
 
 const logger = getLogger("pr-onboarding");
 
