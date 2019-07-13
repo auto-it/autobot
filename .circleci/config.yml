@@ -8,14 +8,20 @@ jobs:
     docker:
       - image: circleci/node:lts
     steps:
-      - run: yarn global add now
-      - run: now --token=$NOW_TOKEN -e APP_ID -e NODE_ENV=production -e PRIVATE_KEY -e SENTRY_DSN -e WEBHOOK_SECRET
+      - run:
+          name: Deploy to production
+          command: |
+            yarn global add now
+            now --token=$NOW_TOKEN -e APP_ID -e NODE_ENV=production -e PRIVATE_KEY -e SENTRY_DSN -e WEBHOOK_SECRET
   deploy-development:
     docker:
       - image: circleci/node:lts
     steps:
-      - run: yarn global add now
-      - run: now --token=$NOW_TOKEN -e NODE_ENV=development
+      - run:
+          name: Deploy to development
+          command: |
+            yarn global add now
+            now --token=$NOW_TOKEN -e NODE_ENV=development
 
 workflows:
   build_and_verify:
