@@ -12,7 +12,7 @@ jobs:
       - run:
           name: Deploy to production
           command: |
-            npx now --scope=auto-it --token=${NOW_TOKEN} -e APP_ID -e NODE_ENV=production -e PRIVATE_KEY -e SENTRY_DSN -e WEBHOOK_SECRET
+            npx now --target=production --name=autobot --scope=auto-it --token=${NOW_TOKEN} -e APP_ID -e NODE_ENV=production -e PRIVATE_KEY -e SENTRY_DSN -e WEBHOOK_SECRET
   deploy-development:
     docker:
       - image: circleci/node:lts
@@ -21,7 +21,7 @@ jobs:
       - run:
           name: Deploy to development
           command: |
-            npx now --scope=auto-it --token=${NOW_TOKEN} -e NODE_ENV=development
+            npx now --target=staging --name=autobot --scope=auto-it --token=${NOW_TOKEN} -e NODE_ENV=development
 
 workflows:
   build_and_verify:
