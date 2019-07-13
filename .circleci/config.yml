@@ -30,7 +30,6 @@ workflows:
       - yarn/jest
       - deploy-development:
           context: autobot-development
-          context: 
           filters:
             branches:
               ignore:
