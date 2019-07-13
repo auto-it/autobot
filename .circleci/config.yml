@@ -3,6 +3,20 @@ version: 2.1
 orbs:
   yarn: artsy/yarn@2.0.0
 
+jobs:
+  deploy-production:
+    docker:
+      - image: circleci/node:lts
+    steps:
+      - run: yarn global add now
+      - run: now --token=$NOW_TOKEN -e APP_ID -e NODE_ENV=production -e PRIVATE_KEY -e SENTRY_DSN -e WEBHOOK_SECRET
+  deploy-development:
+    docker:
+      - image: circleci/node:lts
+    steps:
+      - run: yarn global add now
+      - run: now --token=$NOW_TOKEN -e NODE_ENV=development
+
 workflows:
   build_and_verify:
     jobs:
@@ -10,3 +24,22 @@ workflows:
       - yarn/lint
       - yarn/type-check
       - yarn/jest
+      - deploy-development:
+          filters:
+            branches:
+              ignore:
+                - master
+          requires:
+            - yarn/update-cache
+            - yarn/lint
+            - yarn/type-check
+            - yarn/jest
+      - deploy-production:
+          filters:
+            branches:
+              only: master
+          requires:
+            - yarn/update-cache
+            - yarn/lint
+            - yarn/type-check
+            - yarn/jest

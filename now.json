@@ -16,13 +16,6 @@
       "use": "@now/static"
     }
   ],
-  "env": {
-    "NODE_ENV": "production",
-    "APP_ID": "@autobot-app-id",
-    "WEBHOOK_SECRET": "@autobot-webhook-secret",
-    "PRIVATE_KEY": "@autobot-private-key",
-    "SENTRY_DSN": "@sentry-dsn"
-  },
   "routes": [
     {
       "src": "/",
