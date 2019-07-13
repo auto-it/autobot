@@ -8,18 +8,20 @@ jobs:
     docker:
       - image: circleci/node:lts
     steps:
+      - checkout
       - run:
           name: Deploy to production
           command: |
-            npx now --token=${NOW_TOKEN} -e APP_ID -e NODE_ENV=production -e PRIVATE_KEY -e SENTRY_DSN -e WEBHOOK_SECRET
+            npx now --scope=auto --token=${NOW_TOKEN} -e APP_ID -e NODE_ENV=production -e PRIVATE_KEY -e SENTRY_DSN -e WEBHOOK_SECRET
   deploy-development:
     docker:
       - image: circleci/node:lts
     steps:
+      - checkout
       - run:
           name: Deploy to development
           command: |
-            npx now --token=${NOW_TOKEN} -e NODE_ENV=development
+            npx now --scope=auto --token=${NOW_TOKEN} -e NODE_ENV=development
 
 workflows:
   build_and_verify:
