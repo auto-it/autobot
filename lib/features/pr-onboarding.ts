@@ -1,7 +1,6 @@
-import { PullRequestAction } from "../plugin";
 import { PRContext } from "../models/context";
 import { LabelRelease, LabelError } from "../models/release";
-import { Config, getConfig } from "../config";
+import { Config, getConfig } from "../models/config";
 import dedent from "dedent";
 import { createChecklist } from "../models/checklist";
 import { renderLabel, populateLabel, getSkipReleaseLabelsFromConfig } from "../models/label";
@@ -92,7 +91,7 @@ export default async (context: Context<WebhookPayloadPullRequest>) => {
   const config = await getConfig(context);
   const release = getLabelRelease(context, config);
 
-  if (context.payload.action === PullRequestAction.opened && hasLabels(release) === false) {
+  if (context.payload.action === "opened" && hasLabels(release) === false) {
     const { owner, repo, number: issue_number } = context.issue();
     // Initial on-boarding
     context.github.issues.update({

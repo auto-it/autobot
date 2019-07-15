@@ -1,5 +1,5 @@
 import { PRContext } from "./context";
-import { Config } from "../config";
+import { Config } from "./config";
 import { getLabelsOnPR, labelToString, getSkipReleaseLabelsFromConfig } from "./label";
 import { fromPairs, intersection } from "lodash";
 

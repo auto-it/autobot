@@ -3,9 +3,9 @@ import { WebhookPayloadPullRequest } from "@octokit/webhooks";
 import merge from "deepmerge";
 import axios from "axios";
 import { property, isPlainObject } from "lodash";
-import { getLogger } from "./utils/logger";
-import { LabelConfig, defaultLabelDefinition } from "./models/label";
-import { PRContext } from "./models/context";
+import { getLogger } from "../utils/logger";
+import { LabelConfig, defaultLabelDefinition } from "./label";
+import { PRContext } from "./context";
 
 const logger = getLogger("config");
 

@@ -6,7 +6,7 @@ import { LabelRelease, LabelError } from "../models/release";
 import { WebhookPayloadPullRequest } from "@octokit/webhooks";
 import { Context } from "probot";
 import { setStatus } from "../models/status";
-import { getConfig } from "../config";
+import { getConfig } from "../models/config";
 import { getLabelRelease } from "../models/release";
 
 const logger = getLogger("block-if-missing-labels");

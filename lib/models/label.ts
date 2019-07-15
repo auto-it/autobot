@@ -2,7 +2,7 @@ import { PRContext } from "./context";
 import randomColor from "random-color";
 import { get } from "../utils/get";
 import { Octokit } from "probot";
-import { Config } from "../config";
+import { Config } from "./config";
 
 const domain = "https://autobot.auto-it.now.sh";
 
