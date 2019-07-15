@@ -1,51 +1,62 @@
-import { PullRequestPlugin } from "../plugin";
-import { Hooks, PRContext, Status } from "../autobot";
+import { PRContext } from "../models/context";
+import { Status } from "../models/status";
 import { getLogger } from "../utils/logger";
-import { formattedRepoName } from "../models/pr-context";
+import { formattedRepoName } from "../models/context";
 import { LabelRelease, LabelError } from "./calculate-release-by-labels";
+import { WebhookPayloadPullRequest } from "@octokit/webhooks";
+import { Context } from "probot";
+import { setStatus } from "../models/status";
+import { getConfig } from "../config";
+import { getLabelRelease } from "../models/release";
 
 const logger = getLogger("block-if-missing-labels");
 
-export class BlockIfMissingLabels extends PullRequestPlugin {
-  public name = "BlockIfMissingLabels";
-  private release?: LabelRelease;
-
-  public apply(prHooks: Hooks["pr"]) {
-    logger.debug(`Applying hooks for ${this.name}`);
-    prHooks.onReleaseType.tap(this.name, release => (this.release = release));
-    prHooks.modifyCompleteStatus.tapPromise(this.name, this.setStatus.bind(this));
+export const buildStatusMessage = (context: PRContext, release: LabelRelease): Status => {
+  if (!release) {
+    throw new Error("Release type unknown when trying to set blocked label status");
   }
+  if (release.kind === "invalid" && release.reason === LabelError.NoLabels) {
+    logger.info(`${formattedRepoName(context)} PR #${context.payload.number} missing required version labels`, {
+      url: context.url,
+    });
+    return {
+      state: "pending",
+      description: "Waiting for valid release labels",
+    };
+  } else if (release.kind === "invalid" && release.reason === LabelError.ConflictingLabels) {
+    return {
+      state: "error",
+      description: "Conflicting version labels",
+    };
+  } else if (release.kind === "invalid") {
+    throw new Error("Unknown invalid label state");
+    // TODO: Should this set an error status?
+  } else if (release.skip) {
+    return {
+      state: "success",
+      description: `Skipping release for this ${release.type} version`,
+    };
+  } else {
+    return {
+      state: "success",
+      description: `This PR will release a ${release.type} version`,
+    };
+  }
+};
 
-  private setStatus = async (_status: Status, context: PRContext): Promise<Status> => {
-    if (!this.release) {
-      throw new Error("Release type unknown when trying to set blocked label status");
-    }
-    if (this.release.kind === "invalid" && this.release.reason === LabelError.NoLabels) {
-      logger.info(`${formattedRepoName(context)} PR #${context.payload.number} missing required version labels`, {
-        url: context.url,
-      });
-      return {
-        state: "pending",
-        description: "Waiting for valid release labels",
-      };
-    } else if (this.release.kind === "invalid" && this.release.reason === LabelError.ConflictingLabels) {
-      return {
-        state: "error",
-        description: "Conflicting version labels",
-      };
-    } else if (this.release.kind === "invalid") {
-      throw new Error("Unknown invalid label state");
-      // TODO: Should this set an error status?
-    } else if (this.release.skip) {
-      return {
-        state: "success",
-        description: `Skipping release for this ${this.release.type} version`,
-      };
-    } else {
-      return {
-        state: "success",
-        description: `This PR will release a ${this.release.type} version`,
-      };
-    }
-  };
-}
+export default async (context: Context<WebhookPayloadPullRequest>) => {
+  // Get Config
+  const config = await getConfig(context);
+
+  // Set pending status
+  const pendingMessage = "Validating auto setup";
+
+  await setStatus(context, { state: "pending", description: pendingMessage });
+
+  // Get version
+  const release = getLabelRelease(context, config);
+  const statusMessage = buildStatusMessage(context, release);
+
+  // Set complete status
+  await setStatus(context, statusMessage);
+};

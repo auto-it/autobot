@@ -5,6 +5,7 @@ import axios from "axios";
 import { property, isPlainObject } from "lodash";
 import { getLogger } from "./utils/logger";
 import { LabelConfig, defaultLabelDefinition } from "./models/label";
+import { PRContext } from "./models/context";
 
 const logger = getLogger("config");
 
@@ -102,5 +103,13 @@ export const fetchConfig = async (context: Context<WebhookPayloadPullRequest>, p
   // Set defaults
   config = merge({ labels: defaultLabelDefinition }, config);
   logger.info({ msg: "final config", config });
+  return config;
+};
+
+let config: Config;
+export const getConfig = async (context: PRContext) => {
+  if (!config) {
+    config = await fetchConfig(context);
+  }
   return config;
 };

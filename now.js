@@ -1,6 +1,5 @@
 /* eslint-disable */
 
-const { toLambda } = require("probot-serverless-now");
-const autobot = require("./lib/app");
+const { initialize } = require("./lib");
 
-module.exports = toLambda(autobot);
+module.exports = initialize;

@@ -1,12 +1,15 @@
 import { PullRequestPlugin, PullRequestAction } from "../plugin";
-import { Hooks, PRContext } from "../autobot";
+import { PRContext } from "../models/context";
 import { getLogger } from "../utils/logger";
 import { LabelRelease, LabelError } from "./calculate-release-by-labels";
-import { Config } from "../config";
+import { Config, getConfig } from "../config";
 import dedent from "dedent";
 import { createChecklist } from "../models/checklist";
 import { renderLabel, populateLabel, getSkipReleaseLabelsFromConfig } from "../models/label";
 import { sub, italics, bold } from "../utils/markdown";
+import { WebhookPayloadPullRequest } from "@octokit/webhooks";
+import { Context } from "probot";
+import { getLabelRelease } from "../models/release";
 
 const logger = getLogger("pr-onboarding");
 
@@ -85,42 +88,22 @@ const createLabelChecklists = async (context: PRContext, config: Config) => {
   return [section(semverHead, semverChecklist), section(skipReleaseHead, skipReleaseChecklist)];
 };
 
-export class PROnBoarding extends PullRequestPlugin {
-  private hasLabels: boolean = false;
-  public name = "PROnBoarding";
-  public actions = [
-    PullRequestAction.opened,
-    PullRequestAction.edited,
-    PullRequestAction.labeled,
-    PullRequestAction.unlabeled,
-  ];
+const hasLabels = (release: LabelRelease) =>
+  release.kind === "invalid" && release.reason === LabelError.NoLabels ? false : true;
 
-  public apply(prHooks: Hooks["pr"]) {
-    logger.debug(`Applying hooks for ${this.name}`);
-    prHooks.onReleaseType.tap(this.name, this.checkLabels);
-    prHooks.process.tapPromise(this.name, this.onBoard);
+export default async (context: Context<WebhookPayloadPullRequest>) => {
+  const config = await getConfig(context);
+  const release = getLabelRelease(context, config);
+
+  if (context.payload.action === PullRequestAction.opened && hasLabels(release) === false) {
+    const { owner, repo, number: issue_number } = context.issue();
+    // Initial on-boarding
+    context.github.issues.update({
+      owner,
+      repo,
+      issue_number,
+      body:
+        context.payload.pull_request.body + "\n\n" + onBoardingMessage(await createLabelChecklists(context, config)),
+    });
   }
-
-  private checkLabels = (release: LabelRelease) => {
-    if (release.kind === "invalid" && release.reason === LabelError.NoLabels) {
-      this.hasLabels = false;
-    } else {
-      this.hasLabels = true;
-    }
-  };
-
-  private onBoard = async (context: PRContext, config: Config) => {
-    // TODO: Check if feature is enabled
-    if (context.payload.action === PullRequestAction.opened && this.hasLabels === false) {
-      const { owner, repo, number: issue_number } = context.issue();
-      // Initial on-boarding
-      context.github.issues.update({
-        owner,
-        repo,
-        issue_number,
-        body:
-          context.payload.pull_request.body + "\n\n" + onBoardingMessage(await createLabelChecklists(context, config)),
-      });
-    }
-  };
-}
+};

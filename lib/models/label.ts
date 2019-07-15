@@ -1,4 +1,4 @@
-import { PRContext } from "../autobot";
+import { PRContext } from "./context";
 import randomColor from "random-color";
 import { get } from "../utils/get";
 import { Octokit } from "probot";

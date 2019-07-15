@@ -1,5 +1,5 @@
 import { CalculateReleaseByLabels } from "../../lib/features/calculate-release-by-labels";
-import { PRContext } from "../../lib/autobot";
+import { PRContext } from "../../lib/models/context";
 import { Config } from "../../lib/config";
 import { LabelError } from "../../lib/features/calculate-release-by-labels";
 import { ReleaseType } from "../../lib/models/release";
