@@ -1,6 +1,6 @@
 import { calculateLabelRelease, LabelError } from "../../lib/models/release";
 import { PRContext } from "../../lib/models/context";
-import { Config } from "../../lib/config";
+import { Config } from "../../lib/models/config";
 import { ReleaseType } from "../../lib/models/release";
 
 describe("calculateLabelRelease", () => {
