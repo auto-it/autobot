@@ -1,7 +1,6 @@
-import { PullRequestPlugin, PullRequestAction } from "../plugin";
+import { PullRequestAction } from "../plugin";
 import { PRContext } from "../models/context";
-import { getLogger } from "../utils/logger";
-import { LabelRelease, LabelError } from "./calculate-release-by-labels";
+import { LabelRelease, LabelError } from "../models/release";
 import { Config, getConfig } from "../config";
 import dedent from "dedent";
 import { createChecklist } from "../models/checklist";
@@ -10,8 +9,6 @@ import { sub, italics, bold } from "../utils/markdown";
 import { WebhookPayloadPullRequest } from "@octokit/webhooks";
 import { Context } from "probot";
 import { getLabelRelease } from "../models/release";
-
-const logger = getLogger("pr-onboarding");
 
 const createAutoChecklist = createChecklist.bind(null, "auto");
 

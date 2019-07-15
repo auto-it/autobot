@@ -2,7 +2,7 @@ import { PRContext } from "../models/context";
 import { Status } from "../models/status";
 import { getLogger } from "../utils/logger";
 import { formattedRepoName } from "../models/context";
-import { LabelRelease, LabelError } from "./calculate-release-by-labels";
+import { LabelRelease, LabelError } from "../models/release";
 import { WebhookPayloadPullRequest } from "@octokit/webhooks";
 import { Context } from "probot";
 import { setStatus } from "../models/status";
