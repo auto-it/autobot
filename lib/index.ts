@@ -9,6 +9,9 @@ import { WebhookPayloadPullRequest } from "@octokit/webhooks";
 
 import ValidateLabelStatus from "./features/block-if-missing-labels";
 import PROnboarding from "./features/pr-onboarding";
+import { getLogger } from "./utils/logger";
+
+const logger = getLogger("app");
 
 interface FeatureListing {
   name: string;
@@ -47,6 +50,7 @@ export const initialize = async (req: NowRequest, res: NowResponse) => {
       }
     })((req as unknown) as ClientRequest, res);
   } else {
+    logger.debug("No matching header, skipping processing");
     res.status(200);
     res.end();
   }
