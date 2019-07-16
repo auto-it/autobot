@@ -81,10 +81,9 @@ export const calculateLabelRelease = (context: PRContext, config: Config) => {
   return release;
 };
 
-let labelRelease: LabelRelease;
 export const getLabelRelease = (context: PRContext, config: Config) => {
-  if (!labelRelease) {
-    labelRelease = calculateLabelRelease(context, config);
+  if (!global.cache.labelRelease) {
+    global.cache.labelRelease = calculateLabelRelease(context, config);
   }
-  return labelRelease;
+  return global.cache.labelRelease;
 };

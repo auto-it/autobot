@@ -106,10 +106,9 @@ export const fetchConfig = async (context: Context<WebhookPayloadPullRequest>, p
   return config;
 };
 
-let config: Config;
 export const getConfig = async (context: PRContext) => {
-  if (!config) {
-    config = await fetchConfig(context);
+  if (!global.cache.config) {
+    global.cache.config = await fetchConfig(context);
   }
-  return config;
+  return global.cache.config;
 };

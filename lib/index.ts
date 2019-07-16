@@ -40,10 +40,13 @@ export = async (req: NowRequest, res: NowResponse) => {
 
   const event = req.headers["x-github-event"];
   if (event && topLevelEvents.includes(event as string)) {
+    // Prep cache
+    global.cache = {};
     const { action } = (await json(req)) as any;
     const relatedFeatures = features.filter(
       f => f.events.includes(event as WebHookEvent) || f.events.includes(`${event}.${action}` as WebHookEvent),
     );
+    logger.debug("related features", relatedFeatures.length);
     return toLambda(app => {
       for (let feature of relatedFeatures) {
         app.on(feature.events, feature.handler);
