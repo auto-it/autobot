@@ -34,11 +34,11 @@ const features: FeatureCollection = [
   },
 ];
 
-export const initialize = async (req: NowRequest, res: NowResponse) => {
+export = async (req: NowRequest, res: NowResponse) => {
   const events = flatMap(features, f => f.events);
   const topLevelEvents = events.map(e => e.split(".")[0]);
 
-  const event = req.headers["X-GitHub-Event"];
+  const event = req.headers["x-github-event"];
   if (event && topLevelEvents.includes(event as string)) {
     const { action } = (await json(req)) as any;
     const relatedFeatures = features.filter(

@@ -17,10 +17,9 @@
     "build": "tsc -p tsconfig.json",
     "lint": "eslint --quiet --ignore-pattern \"*.d.ts\" lib/**/*.ts",
     "type-check": "tsc --pretty --noEmit",
+    "pretest": "yarn clean",
     "test": "jest",
-    "test:watch": "jest --watch --notify --notifyMode=change --coverage",
-    "now-build": "yarn build",
-    "now-dev": "yarn build -w"
+    "test:watch": "jest --watch --notify --notifyMode=change --coverage"
   },
   "dependencies": {
     "@primer/octicons": "^9.1.1",

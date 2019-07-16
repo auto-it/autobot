@@ -2,6 +2,9 @@ import { PRContext } from "./context";
 import { Config } from "./config";
 import { getLabelsOnPR, labelToString, getSkipReleaseLabelsFromConfig } from "./label";
 import { fromPairs, intersection } from "lodash";
+import { getLogger } from "../utils/logger";
+
+const logger = getLogger("release");
 
 export enum ReleaseType {
   Major = "major",
@@ -49,8 +52,13 @@ const getConfigLabelPairs = (labels: Config["labels"]): [string, string][] =>
 export const calculateLabelRelease = (context: PRContext, config: Config) => {
   let release: Release<LabelError>;
 
+  logger.debug("labels", { labels: context.payload.pull_request.labels });
+
   const prLabels: string[] = getLabelsOnPR(context).map(l => labelToString(l, ""));
   const configLabels = fromPairs(getConfigLabelPairs(config.labels));
+
+  logger.debug("prLabels", { prLabels });
+  logger.debug("configLabels", configLabels);
 
   const hasMajor = prLabels.includes(configLabels.major);
   const hasMinor = prLabels.includes(configLabels.minor);

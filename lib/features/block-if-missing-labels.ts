@@ -48,6 +48,8 @@ export default async (context: Context<WebhookPayloadPullRequest>) => {
   // Get Config
   const config = await getConfig(context);
 
+  logger.debug(`${context.name}.${context.payload.action}`);
+
   // Set pending status
   const pendingMessage = "Validating auto setup";
 
@@ -56,6 +58,7 @@ export default async (context: Context<WebhookPayloadPullRequest>) => {
   // Get version
   const release = getLabelRelease(context, config);
   const statusMessage = buildStatusMessage(context, release);
+  logger.debug(statusMessage);
 
   // Set complete status
   await setStatus(context, statusMessage);
