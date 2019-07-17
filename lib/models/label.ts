@@ -3,6 +3,9 @@ import randomColor from "random-color";
 import { get } from "../utils/get";
 import { Octokit } from "probot";
 import { Config } from "./config";
+import { getLogger } from "../utils/logger";
+
+const logger = getLogger("label");
 
 const domain = "https://autobot.auto-it.now.sh";
 
@@ -83,6 +86,7 @@ export const populateLabel = async (
   context: PRContext,
   labels: Octokit.IssuesListLabelsForRepoResponseItem[],
 ): Promise<NormalizedLabel> => {
+  logger.debug("Populate label", label);
   const { owner, repo } = context.repo();
   const labelText = typeof label === "string" ? label : label.name || labelType;
   const labelAlreadyExists = labels.find(l => l.name === labelText);
@@ -91,7 +95,9 @@ export const populateLabel = async (
     const { name, description, color } = labelAlreadyExists;
     return { name, description, color };
   } else {
-    const color = randomColor().hexString();
+    const color = randomColor()
+      .hexString()
+      .substr(1);
     type DefaultLabelKey = keyof typeof defaultLabelDefinition;
     const description =
       (typeof label !== "string" && !!label.description && label.description) ||
