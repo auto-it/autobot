@@ -21,14 +21,14 @@ interface ChecklistCollection {
   };
 }
 
-const CHECKS = /^-\[(x|X| )\] <!-- (\w+:\w+:\w+) --> (.*)/gm;
-const CHECK_DETAILS = /^-\[(x|X| )\] <!-- (\w+:\w+:\w+) --> (.*)/;
+const CHECKS = /^- \[(x|X| )\] <!-- (\w+:\w+:\w+) --> (.*)/gm;
+const CHECK_DETAILS = /^- \[(x|X| )\] <!-- (\w+:\w+:\w+) --> (.*)/;
 
 export const createChecklist = (namespace: string, checklistId: string, items: ChecklistItem[]) =>
   items
     .map(
       ({ id, checked, body }) =>
-        `-[${checked ? "x" : " "}] <!-- ${slug(namespace)}:${slug(checklistId)}:${slug(id)} --> ${body}`,
+        `- [${checked ? "x" : " "}] <!-- ${slug(namespace)}:${slug(checklistId)}:${slug(id)} --> ${body}`,
     )
     .join("\n");
 
