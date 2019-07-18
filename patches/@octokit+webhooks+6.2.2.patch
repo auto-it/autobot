@@ -1,0 +1,33 @@
+diff --git a/node_modules/@octokit/webhooks/index.d.ts b/node_modules/@octokit/webhooks/index.d.ts
+index be58e24..adb7ce6 100644
+--- a/node_modules/@octokit/webhooks/index.d.ts
++++ b/node_modules/@octokit/webhooks/index.d.ts
+@@ -1856,6 +1856,7 @@ declare namespace Webhooks {
+     pull_request: WebhookPayloadPullRequestPullRequest;
+     repository: PayloadRepository;
+     sender: WebhookPayloadPullRequestSender;
++    changes?: WebhookPayloadIssuesChanges;
+   };
+   type WebhookPayloadPublicSender = {
+     login: string;
+@@ -2554,7 +2555,10 @@ declare namespace Webhooks {
+     type: string;
+     site_admin: boolean;
+   };
+-  type WebhookPayloadIssuesChanges = {};
++  type WebhookPayloadIssuesChanges = {
++    body?: string;
++    title?: string;
++  };
+   type WebhookPayloadIssuesIssueMilestoneCreator = {
+     login: string;
+     id: number;
+@@ -2689,7 +2693,7 @@ declare namespace Webhooks {
+   type WebhookPayloadIssues = {
+     action: string;
+     issue: WebhookPayloadIssuesIssue;
+-    changes: WebhookPayloadIssuesChanges;
++    changes?: WebhookPayloadIssuesChanges;
+     repository: PayloadRepository;
+     sender: WebhookPayloadIssuesSender;
+   };
