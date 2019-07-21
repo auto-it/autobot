@@ -3,19 +3,19 @@ import { slug } from "../utils/slug";
 
 // TODO: Implement duplication validation
 
-interface ChecklistItem {
+export interface ChecklistItem {
   id: string;
   checked: boolean;
   body: string;
 }
 
-interface Checklist {
+export interface Checklist {
   id: string;
   namespace: string;
   items: ChecklistItem[];
 }
 
-interface ChecklistCollection {
+export interface ChecklistCollection {
   [namespace: string]: {
     [checklistID: string]: Checklist;
   };
@@ -32,7 +32,10 @@ export const createChecklist = (namespace: string, checklistId: string, items: C
     )
     .join("\n");
 
-export const parseChecklists = (text: string) => {
+export function parseChecklists(text: string): ChecklistCollection;
+export function parseChecklists(text: string, namespace: string): { [checklistID: string]: Checklist };
+
+export function parseChecklists(text: string, namespace?: string) {
   const checklists: ChecklistCollection = {};
 
   (text.match(CHECKS) || [])
@@ -59,5 +62,8 @@ export const parseChecklists = (text: string) => {
         },
       };
     });
-  return checklists;
-};
+  return namespace ? checklists[namespace] : checklists;
+}
+
+export const atMostOneItemChecked = (checklist: Checklist) =>
+  checklist.items.reduce((total, item) => (item.checked ? total + 1 : total), 0) <= 1;
