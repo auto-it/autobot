@@ -1,7 +1,7 @@
 import { PRContext } from "./context";
 import { Config } from "./config";
-import { getLabelsOnPR, labelToString, getSkipReleaseLabelsFromConfig } from "./label";
-import { fromPairs, intersection } from "lodash";
+import { getLabelsOnPR, labelToString, getSkipReleaseLabelsFromConfig, getLabelsFromConfig } from "./label";
+import { intersection } from "lodash";
 import { getLogger } from "../utils/logger";
 
 const logger = getLogger("release");
@@ -43,19 +43,13 @@ export enum LabelError {
   ConflictingLabels,
 }
 
-const getConfigLabelPairs = (labels: Config["labels"]): [string, string][] =>
-  Object.entries(labels).map(([labelKey, label]) => [
-    labelKey,
-    typeof label === "string" ? label : label.name ? label.name : labelKey,
-  ]);
-
 export const calculateLabelRelease = (context: PRContext, config: Config) => {
   let release: Release<LabelError>;
 
   logger.debug("labels", { labels: context.payload.pull_request.labels });
 
   const prLabels: string[] = getLabelsOnPR(context).map(l => labelToString(l, ""));
-  const configLabels = fromPairs(getConfigLabelPairs(config.labels));
+  const configLabels = getLabelsFromConfig(config);
 
   logger.debug("prLabels", { prLabels });
   logger.debug("configLabels", configLabels);

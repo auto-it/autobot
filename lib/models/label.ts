@@ -4,6 +4,7 @@ import { get } from "../utils/get";
 import { Octokit } from "probot";
 import { Config } from "./config";
 import { getLogger } from "../utils/logger";
+import { fromPairs } from "lodash";
 
 const logger = getLogger("label");
 
@@ -51,6 +52,14 @@ export const defaultLabelDefinition = {
     description: "Changes only affect the documentation",
   },
 };
+
+export const getLabelsFromConfig = (config: Config) =>
+  fromPairs(
+    Object.entries({ ...defaultLabelDefinition, ...config.labels }).map(([labelKey, label]) => [
+      labelKey,
+      typeof label === "string" ? label : label.name ? label.name : labelKey,
+    ]),
+  );
 
 export const getSkipReleaseLabelsFromConfig = (config: Config) =>
   [config.labels["skip-release"], ...config.skipReleaseLabels].filter(label => !!label);
