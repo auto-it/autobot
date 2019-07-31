@@ -1,5 +1,5 @@
 diff --git a/node_modules/@octokit/webhooks/index.d.ts b/node_modules/@octokit/webhooks/index.d.ts
-index be58e24..adb7ce6 100644
+index be58e24..1cfa4fe 100644
 --- a/node_modules/@octokit/webhooks/index.d.ts
 +++ b/node_modules/@octokit/webhooks/index.d.ts
 @@ -1856,6 +1856,7 @@ declare namespace Webhooks {
@@ -10,19 +10,21 @@ index be58e24..adb7ce6 100644
    };
    type WebhookPayloadPublicSender = {
      login: string;
-@@ -2554,7 +2555,10 @@ declare namespace Webhooks {
+@@ -2554,7 +2555,12 @@ declare namespace Webhooks {
      type: string;
      site_admin: boolean;
    };
 -  type WebhookPayloadIssuesChanges = {};
 +  type WebhookPayloadIssuesChanges = {
-+    body?: string;
++    body?: {
++      from: string
++    };
 +    title?: string;
 +  };
    type WebhookPayloadIssuesIssueMilestoneCreator = {
      login: string;
      id: number;
-@@ -2689,7 +2693,7 @@ declare namespace Webhooks {
+@@ -2689,7 +2695,7 @@ declare namespace Webhooks {
    type WebhookPayloadIssues = {
      action: string;
      issue: WebhookPayloadIssuesIssue;

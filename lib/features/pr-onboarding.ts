@@ -153,14 +153,33 @@ const isOnboarding = (context: PRContext) => {
  * `true` if there was an update to the body of the PR, `false` otherwise
  */
 const hasBodyChanges = (context: PRContext) =>
-  (context.payload.changes && isString(context.payload.changes.body) && !!context.payload.pull_request.body) || false;
+  (context.payload.changes && isString(context.payload.changes.body!.from) && !!context.payload.pull_request.body) ||
+  false;
+
+const getLabelsFromBody = (body: string) => {
+  const checklist = parseAutoChecklists(parseMessage(body));
+  const semver = checklist.semver.items;
+  const skipRelease = checklist.skipRelease.items;
+
+  // TODO: Figure out how to reverse checklists to actual labels
+};
 
 const userDidUpdateChecklist = (context: PRContext) => {
-  if (!hasBodyChanges(context)) return false;
+  if (!hasBodyChanges(context)) {
+    logger.debug("No body changes");
+    return false;
+  }
   const newMessage = parseMessage(context.payload.pull_request.body);
-  const oldMessage = parseMessage(context.payload.changes!.body!);
-  if (newMessage == oldMessage) return false;
-  return isEqual(parseAutoChecklists(newMessage), parseAutoChecklists(oldMessage));
+  const oldMessage = parseMessage(context.payload.changes!.body!.from);
+  if (newMessage == oldMessage) {
+    logger.debug("Nothing changed in the message");
+    return false;
+  }
+  logger.debug("messages", newMessage, oldMessage);
+  const newChecklist = parseAutoChecklists(newMessage);
+  const oldChecklist = parseAutoChecklists(oldMessage);
+  logger.debug("checklists", newChecklist, oldChecklist);
+  return !isEqual(parseAutoChecklists(newMessage), parseAutoChecklists(oldMessage));
 };
 
 export default async (context: Context<WebhookPayloadPullRequest>) => {
@@ -184,7 +203,6 @@ export default async (context: Context<WebhookPayloadPullRequest>) => {
       ${messageWrapper(onBoardingMessage(await createLabelChecklists(context, config)))}
     `;
 
-    logger.debug(body);
     context.github.pulls.update({
       owner,
       repo,
@@ -194,6 +212,7 @@ export default async (context: Context<WebhookPayloadPullRequest>) => {
 
     // Updated after user changes
   } else if (onBoarding && action === "edited" && userDidUpdateChecklist(context)) {
+    logger.debug("starting edited flow");
     const { owner, repo, number: pull_number } = context.issue();
     const newMessage = onBoardingMessage(await createLabelChecklists(context, config));
     const body = overwriteMessage(context, newMessage);
@@ -204,12 +223,14 @@ export default async (context: Context<WebhookPayloadPullRequest>) => {
       pull_number,
       body,
     });
-  } else if ((action === "labeled" || action === "unlabeled") && onBoarding) {
+
+    // When a label is added or removed
+  } else if (onBoarding && (action === "labeled" || action === "unlabeled")) {
+    logger.debug("starting labeled flow");
     const { owner, repo, number: pull_number } = context.issue();
     const newMessage = onBoardingMessage(await createLabelChecklists(context, config));
     const body = overwriteMessage(context, newMessage);
-
-    // TODO: Don't write an update if the body hasn't changed
+    // TODO: Don't write an update if `body` didn't change
 
     context.github.pulls.update({
       owner,
