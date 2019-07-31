@@ -16,8 +16,8 @@ describe("createChecklist", () => {
       },
     ]);
     expect(checklist).toBe(dedent`
-      -[ ] <!-- auto:semver:major --> major
-      -[x] <!-- auto:semver:minor --> minor 
+      - [ ] <!-- auto:semver:major --> major
+      - [x] <!-- auto:semver:minor --> minor 
     `);
   });
 });
@@ -26,7 +26,7 @@ describe("parseChecklists", () => {
   it("returns a checklist from a text string", () => {
     const testString = dedent`
     blah blah
-    -[ ] <!-- auto:semver:major --> Does a major release
+    - [ ] <!-- auto:semver:major --> Does a major release
     blah
     `;
 
@@ -49,9 +49,9 @@ describe("parseChecklists", () => {
 
   it("combines checks into a single checklist", () => {
     const testString = dedent`
-    -[ ] <!-- auto:semver:major --> abc
-    -[ ] <!-- auto:semver:minor --> abc
-    -[x] <!-- auto:changelog:docs --> abc
+    - [ ] <!-- auto:semver:major --> abc
+    - [ ] <!-- auto:semver:minor --> abc
+    - [x] <!-- auto:changelog:docs --> abc
     `;
 
     expect(parseChecklists(testString)).toEqual({
