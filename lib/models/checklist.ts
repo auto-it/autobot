@@ -1,5 +1,4 @@
 import { get } from "../utils/get";
-import { slug } from "../utils/slug";
 
 // TODO: Implement duplication validation
 
@@ -15,10 +14,12 @@ export interface Checklist {
   items: ChecklistItem[];
 }
 
+export interface ChecklistGroup {
+  [checklistID: string]: Checklist;
+}
+
 export interface ChecklistCollection {
-  [namespace: string]: {
-    [checklistID: string]: Checklist;
-  };
+  [namespace: string]: ChecklistGroup;
 }
 
 const CHECKS = /^- \[(x|X| )\] <!-- (\w+:\w+:\w+) --> (.*)/gm;
@@ -26,10 +27,7 @@ const CHECK_DETAILS = /^- \[(x|X| )\] <!-- (\w+:\w+:\w+) --> (.*)/;
 
 export const createChecklist = (namespace: string, checklistId: string, items: ChecklistItem[]) =>
   items
-    .map(
-      ({ id, checked, body }) =>
-        `- [${checked ? "x" : " "}] <!-- ${slug(namespace)}:${slug(checklistId)}:${slug(id)} --> ${body}`,
-    )
+    .map(({ id, checked, body }) => `- [${checked ? "x" : " "}] <!-- ${namespace}:${checklistId}:${id} --> ${body}`)
     .join("\n");
 
 export function parseChecklists(text: string): ChecklistCollection;

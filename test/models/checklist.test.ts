@@ -16,8 +16,8 @@ describe("createChecklist", () => {
       },
     ]);
     expect(checklist).toBe(dedent`
-      - [ ] <!-- auto:semver:major --> major
-      - [x] <!-- auto:semver:minor --> minor 
+      - [ ] <!-- auto:semver:f1425da40a9f2d21ab702a1c7feae026 --> major
+      - [x] <!-- auto:semver:ab846c0e3717a3e7d14af45cab70b44a --> minor 
     `);
   });
 });
@@ -26,7 +26,7 @@ describe("parseChecklists", () => {
   it("returns a checklist from a text string", () => {
     const testString = dedent`
     blah blah
-    - [ ] <!-- auto:semver:major --> Does a major release
+    - [ ] <!-- auto:semver:f1425da40a9f2d21ab702a1c7feae026 --> Does a major release
     blah
     `;
 
@@ -37,7 +37,7 @@ describe("parseChecklists", () => {
           namespace: "auto",
           items: [
             {
-              id: "major",
+              id: "f1425da40a9f2d21ab702a1c7feae026",
               checked: false,
               body: "Does a major release",
             },
