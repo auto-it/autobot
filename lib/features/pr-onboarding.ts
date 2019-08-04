@@ -31,7 +31,15 @@ enum ChecklistKey {
   skipRelease = "skipRelease",
 }
 
+/**
+ * A shorthanded way of creating a checklist in the `autobot` namespace
+ */
 const createAutoChecklist = createChecklist.bind(null, CHECKLIST_NAMESPACE);
+
+/**
+ * A shorthanded method of grabbing only checklist items in the `autobot` namespace
+ * @param body The text content of a PR description
+ */
 const parseAutoChecklists = (body: string) => parseChecklists(body, CHECKLIST_NAMESPACE);
 
 const MessageStart = "<!--- AutoPR:START --->";

@@ -5,12 +5,12 @@ describe("createChecklist", () => {
   it("creates a checklist", () => {
     const checklist = createChecklist("auto", "semver", [
       {
-        id: "major",
+        id: "f1425da40a9f2d21ab702a1c7feae026",
         checked: false,
         body: "major",
       },
       {
-        id: "minor",
+        id: "ab846c0e3717a3e7d14af45cab70b44a",
         checked: true,
         body: "minor",
       },
