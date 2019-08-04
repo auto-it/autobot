@@ -24,10 +24,10 @@ describe("findLabelFromHash", () => {
   const labelMD5Hash = "1dac6ef503248d2d0ae93db7005b7279";
 
   it("Should return a label whose name matches a given hash", () => {
-    expect(findLabelFromHash(labelMD5Hash, ({ labels: { test: labelText } } as unknown) as Config)).toBe("test-label");
+    expect(findLabelFromHash(labelMD5Hash, { labels: { test: labelText }, skipReleaseLabels: [] })).toBe("test-label");
   });
 
   it("Should return undefined if no matching label found", () => {
-    expect(findLabelFromHash(labelMD5Hash, ({ labels: {} } as unknown) as Config)).toBeUndefined();
+    expect(findLabelFromHash(labelMD5Hash, { labels: {}, skipReleaseLabels: [] })).toBeUndefined();
   });
 });

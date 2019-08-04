@@ -165,7 +165,7 @@ const createLabelChecklists = async (context: PRContext, config: Config, useLabe
   return [section(semverHead, semverChecklist), section(skipReleaseHead, skipReleaseChecklist)];
 };
 
-const isOnboarding = (context: PRContext) => {
+export const isOnboarding = (context: PRContext) => {
   const { body } = context.payload.pull_request;
   return body.includes(MessageStart);
 };
