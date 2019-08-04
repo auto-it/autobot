@@ -81,3 +81,6 @@ export const getLabelRelease = (context: PRContext, config: Config) => {
   }
   return global.cache.labelRelease;
 };
+
+export const hasReleaseLabels = (release: LabelRelease) =>
+  release.kind === "invalid" && release.reason === LabelError.NoLabels ? false : true;

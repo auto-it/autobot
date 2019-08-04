@@ -1,16 +1,26 @@
 import { PRContext } from "../models/context";
-import { LabelRelease, LabelError } from "../models/release";
+import { hasReleaseLabels } from "../models/release";
 import { Config, getConfig } from "../models/config";
 import dedent from "dedent";
-import { createChecklist, parseChecklists } from "../models/checklist";
-import { renderLabel, populateLabel, getSkipReleaseLabelsFromConfig } from "../models/label";
+import { createChecklist, parseChecklists, ChecklistItem } from "../models/checklist";
+import {
+  renderLabel,
+  populateLabel,
+  getSkipReleaseLabelsFromConfig,
+  findLabelFromHash,
+  addLabelsToPR,
+  removeLabelsFromPR,
+  getLabelsOnPR,
+  labelToString,
+} from "../models/label";
 import { sub, italics, bold } from "../utils/markdown";
 import { WebhookPayloadPullRequest } from "@octokit/webhooks";
 import { Context } from "probot";
 import { getLabelRelease } from "../models/release";
 import { getLogger } from "../utils/logger";
 import { isString, isEqual } from "lodash";
-import { slug } from "../utils/slug";
+import { hash } from "../utils/hash";
+import to from "await-to-js";
 
 const logger = getLogger("pr-onboarding");
 
@@ -27,7 +37,7 @@ const parseAutoChecklists = (body: string) => parseChecklists(body, CHECKLIST_NA
 const MessageStart = "<!--- AutoPR:START --->";
 const MessageEnd = "<!--- AutoPR:END --->";
 
-const messageWrapper = (body: string) => dedent`
+export const messageWrapper = (body: string) => dedent`
     ${MessageStart} 
     ---
 
@@ -37,7 +47,7 @@ const messageWrapper = (body: string) => dedent`
     ${MessageEnd} 
 `;
 
-const onBoardingMessage = (sections: string[]) => dedent`
+export const onBoardingMessage = (sections: string[]) => dedent`
     <img align="left" width="60" src="https://autobot.auto-it.now.sh/public/logo.png"/>
 
     ### Choose a release label
@@ -84,10 +94,15 @@ const section = (header: string, checklist: string, warning?: string) => dedent`
     ${warning ? "\n" + sub(":warning:" + italics(bold(warning))) : ""}
     `;
 
-const createLabelChecklists = async (context: PRContext, config: Config) => {
+const createLabelChecklists = async (context: PRContext, config: Config, useLabels = false) => {
   // Fetch labels from config
   const { owner, repo } = context.repo();
   const { data: labels } = await context.github.issues.listLabelsForRepo({ owner, repo });
+  let prLabels: string[] = [];
+
+  if (useLabels) {
+    prLabels = getLabelsOnPR(context).map(label => labelToString(label));
+  }
 
   let checklists = parseAutoChecklists(context.payload.pull_request.body);
 
@@ -97,16 +112,21 @@ const createLabelChecklists = async (context: PRContext, config: Config) => {
       ["major", "minor", "patch"].map(async labelType => {
         const label = await populateLabel(labelType, config.labels[labelType], context, labels);
         let checked = false;
+        const labelId = hash(label.name);
 
         // If a checklist for this type already exists, correctly populate the checklist
         const semverChecklist = checklists[ChecklistKey.semver];
-        if (semverChecklist) {
-          const checklistItem = semverChecklist.items.find(({ id }) => id === labelType);
+        if (!useLabels && semverChecklist) {
+          const checklistItem = semverChecklist.items.find(({ id }) => id === labelId);
           checked = (checklistItem && checklistItem.checked) || false;
         }
 
+        if (useLabels) {
+          checked = prLabels.includes(label.name);
+        }
+
         return {
-          id: labelType,
+          id: labelId,
           checked,
           body: renderLabel(label),
         };
@@ -120,17 +140,21 @@ const createLabelChecklists = async (context: PRContext, config: Config) => {
       getSkipReleaseLabelsFromConfig(config).map(async labelConfig => {
         const label = await populateLabel("skip-release", labelConfig, context, labels);
         let checked = false;
+        const labelId = hash(label.name);
 
         // If a checklist for this type already exists, correctly populate the checklist
         const skipReleaseChecklist = checklists[ChecklistKey.skipRelease];
-        if (skipReleaseChecklist) {
-          const checklistItem = skipReleaseChecklist.items.find(({ id }) => id === slug(label.name));
+        if (!useLabels && skipReleaseChecklist) {
+          const checklistItem = skipReleaseChecklist.items.find(({ id }) => id === labelId);
           checked = (checklistItem && checklistItem.checked) || false;
         }
 
+        if (useLabels) {
+          checked = prLabels.includes(label.name);
+        }
+
         return {
-          // ids ultimately get turned into a slug
-          id: label.name,
+          id: labelId,
           checked,
           body: renderLabel(label),
         };
@@ -141,31 +165,63 @@ const createLabelChecklists = async (context: PRContext, config: Config) => {
   return [section(semverHead, semverChecklist), section(skipReleaseHead, skipReleaseChecklist)];
 };
 
-const hasLabels = (release: LabelRelease) =>
-  release.kind === "invalid" && release.reason === LabelError.NoLabels ? false : true;
-
 const isOnboarding = (context: PRContext) => {
   const { body } = context.payload.pull_request;
   return body.includes(MessageStart);
 };
 
 /**
- * `true` if there was an update to the body of the PR, `false` otherwise
+ * `true` if there was a change to the body of the PR, `false` otherwise
  */
-const hasBodyChanges = (context: PRContext) =>
-  (context.payload.changes && isString(context.payload.changes.body!.from) && !!context.payload.pull_request.body) ||
+const didBodyChange = (context: PRContext) =>
+  (context.payload.changes &&
+    context.payload.changes.body &&
+    isString(context.payload.changes.body!.from) &&
+    !!context.payload.pull_request.body) ||
   false;
 
-const getLabelsFromBody = (body: string) => {
-  const checklist = parseAutoChecklists(parseMessage(body));
-  const semver = checklist.semver.items;
-  const skipRelease = checklist.skipRelease.items;
-
-  // TODO: Figure out how to reverse checklists to actual labels
+const getLabelTextFromChecklistItem = (checklistItem: ChecklistItem, config: Config) => {
+  const label = findLabelFromHash(checklistItem.id, config);
+  if (!label) {
+    logger.debug("Couldn't match label with checklist item", { checklistItem });
+  }
+  return label;
 };
 
-const userDidUpdateChecklist = (context: PRContext) => {
-  if (!hasBodyChanges(context)) {
+/**
+ * This method determines what labels need to be added or removed
+ * based on the current state of labels and checkboxes in the PR.
+ *
+ * @param body A string containing the entire PR description
+ * @param config The auto configuration object
+ */
+const getRequiredLabelChanges = (body: string, config: Config) => {
+  const checklist = parseAutoChecklists(parseMessage(body));
+  const checklistKeys = Object.values(ChecklistKey);
+
+  const checklistItems = Object.values(checklist)
+    .filter(checklist => checklistKeys.includes(checklist.id))
+    .map(checklist => checklist.items)
+    .reduce((a, b) => a.concat(b), []);
+
+  const labelsToAdd = checklistItems
+    .filter(checklist => checklist.checked)
+    .map(checklist => getLabelTextFromChecklistItem(checklist, config))
+    .filter(label => !!label) as string[];
+
+  const labelsToRemove = checklistItems
+    .filter(checklist => !checklist.checked)
+    .map(checklistItem => getLabelTextFromChecklistItem(checklistItem, config))
+    .filter(label => !!label) as string[];
+
+  return {
+    labelsToAdd,
+    labelsToRemove,
+  };
+};
+
+export const didMessageChange = (context: PRContext) => {
+  if (!didBodyChange(context)) {
     logger.debug("No body changes");
     return false;
   }
@@ -175,26 +231,24 @@ const userDidUpdateChecklist = (context: PRContext) => {
     logger.debug("Nothing changed in the message");
     return false;
   }
-  logger.debug("messages", newMessage, oldMessage);
-  const newChecklist = parseAutoChecklists(newMessage);
-  const oldChecklist = parseAutoChecklists(oldMessage);
-  logger.debug("checklists", newChecklist, oldChecklist);
-  return !isEqual(parseAutoChecklists(newMessage), parseAutoChecklists(oldMessage));
+  logger.debug("message changed");
+  return true;
+};
+
+export const didChecklistsChange = (newMessage: string, oldMessage: string) => {
+  const checklistChanged = !isEqual(parseAutoChecklists(newMessage), parseAutoChecklists(oldMessage));
+  logger.debug(checklistChanged ? "checklists changed" : "checklists did not change");
+  return checklistChanged;
 };
 
 export default async (context: Context<WebhookPayloadPullRequest>) => {
-  context.github.hook.before("request", options => {
-    const { url, method, baseUrl, headers, mediaType, request, ...params } = options;
-    logger.debug(`${method} ${url}`, params);
-  });
-
   const { action, pull_request } = context.payload;
   const config = await getConfig(context);
   const release = getLabelRelease(context, config);
   const onBoarding = action !== "opened" && isOnboarding(context);
 
   // Just started on-boarding
-  if (action === "opened" && hasLabels(release) === false) {
+  if (action === "opened" && hasReleaseLabels(release) === false) {
     logger.debug("Starting on-boarding flow");
     const { owner, repo, number: pull_number } = context.issue();
     const body = dedent`
@@ -211,32 +265,60 @@ export default async (context: Context<WebhookPayloadPullRequest>) => {
     });
 
     // Updated after user changes
-  } else if (onBoarding && action === "edited" && userDidUpdateChecklist(context)) {
+  } else if (onBoarding && action === "edited" && didMessageChange(context)) {
     logger.debug("starting edited flow");
     const { owner, repo, number: pull_number } = context.issue();
     const newMessage = onBoardingMessage(await createLabelChecklists(context, config));
     const body = overwriteMessage(context, newMessage);
 
-    context.github.pulls.update({
-      owner,
-      repo,
-      pull_number,
-      body,
-    });
+    let addLabelsError, removeLabelsError;
+    if (didChecklistsChange(newMessage, parseMessage(context.payload.changes!.body!.from))) {
+      const { labelsToAdd, labelsToRemove } = getRequiredLabelChanges(body, config);
+      [addLabelsError] = await to(addLabelsToPR(context, labelsToAdd));
+      [removeLabelsError] = await to(removeLabelsFromPR(context, labelsToRemove));
+    }
+
+    const [updateBodyError] = await to(
+      context.github.pulls.update({
+        owner,
+        repo,
+        pull_number,
+        body,
+      }),
+    );
+
+    if (addLabelsError || removeLabelsError || updateBodyError) {
+      addLabelsError && logger.error("Error when trying to add labels", addLabelsError);
+      removeLabelsError && logger.error("Error when trying to remove labels", removeLabelsError);
+      updateBodyError && logger.error("Error when trying to update the body", updateBodyError);
+      throw new Error("Encountered issue after checklist edit, see log above for details");
+    }
 
     // When a label is added or removed
   } else if (onBoarding && (action === "labeled" || action === "unlabeled")) {
     logger.debug("starting labeled flow");
     const { owner, repo, number: pull_number } = context.issue();
-    const newMessage = onBoardingMessage(await createLabelChecklists(context, config));
-    const body = overwriteMessage(context, newMessage);
-    // TODO: Don't write an update if `body` didn't change
 
-    context.github.pulls.update({
-      owner,
-      repo,
-      pull_number,
-      body,
-    });
+    const newMessage = onBoardingMessage(await createLabelChecklists(context, config, true));
+
+    if (didChecklistsChange(newMessage, parseMessage(pull_request.body))) {
+      logger.debug("Writing body from label updates");
+      const body = overwriteMessage(context, newMessage);
+      const [updateBodyError] = await to(
+        context.github.pulls.update({
+          owner,
+          repo,
+          pull_number,
+          body,
+        }),
+      );
+
+      if (updateBodyError) {
+        logger.error("Failed to update body after label updates");
+        throw updateBodyError;
+      }
+    }
+  } else {
+    logger.debug(`No change needed for action ${action}`);
   }
 };
