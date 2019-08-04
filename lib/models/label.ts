@@ -4,6 +4,7 @@ import { get } from "../utils/get";
 import { Octokit } from "probot";
 import { Config } from "./config";
 import { getLogger } from "../utils/logger";
+import { hash } from "../utils/hash";
 import { fromPairs } from "lodash";
 
 const logger = getLogger("label");
@@ -53,20 +54,43 @@ export const defaultLabelDefinition = {
   },
 };
 
-export const getLabelsFromConfig = (config: Config) =>
-  fromPairs(
+export const getLabelsFromConfig = (config: Config) => ({
+  ...fromPairs(config.skipReleaseLabels.map(label => [label, label]) || []),
+  ...fromPairs(
     Object.entries({ ...defaultLabelDefinition, ...config.labels }).map(([labelKey, label]) => [
       labelKey,
       typeof label === "string" ? label : label.name ? label.name : labelKey,
     ]),
-  );
+  ),
+});
 
 export const getSkipReleaseLabelsFromConfig = (config: Config) =>
   [config.labels["skip-release"], ...config.skipReleaseLabels].filter(label => !!label);
+
 export const getLabelsOnPR = (context: PRContext) => context.payload.pull_request.labels as Label[];
 
-export const labelToString = (label: Label | LabelConfig, defaultName: string) =>
-  typeof label === "string" ? label : label.name || defaultName;
+export const labelToString = (label: Label | LabelConfig, defaultName?: string) => {
+  const labelText = typeof label === "string" ? label : label.name || defaultName;
+  if (typeof labelText !== "string") throw new Error("Unable to convert label to string");
+  return labelText;
+};
+
+export const addLabelsToPR = (context: PRContext, labels: string[]) => {
+  const { owner, repo, number: issue_number } = context.issue();
+  return context.github.issues.addLabels({ owner, repo, issue_number, labels });
+};
+
+export const removeLabelsFromPR = (context: PRContext, labels: string[]) => {
+  const { owner, repo, number: issue_number } = context.issue();
+  const prLabels = getLabelsOnPR(context).map(label => labelToString(label, ""));
+  const labelsToRemove = labels.filter(label => prLabels.includes(label));
+  return Promise.all(
+    labelsToRemove.map(label => context.github.issues.removeLabel({ owner, repo, issue_number, name: label })),
+  );
+};
+
+export const findLabelFromHash = (labelHash: string, config: Config) =>
+  Object.values(getLabelsFromConfig(config)).find(label => hash(label) === labelHash);
 
 export type LabelConfig =
   | string
