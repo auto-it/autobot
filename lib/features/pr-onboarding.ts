@@ -2,7 +2,7 @@ import { PRContext } from "../models/context";
 import { hasReleaseLabels } from "../models/release";
 import { Config, getConfig } from "../models/config";
 import dedent from "dedent";
-import { createChecklist, parseChecklists, ChecklistItem } from "../models/checklist";
+import { createChecklist, parseChecklists, ChecklistItem, moreThanOneItemChecked } from "../models/checklist";
 import {
   renderLabel,
   populateLabel,
@@ -99,7 +99,7 @@ const section = (header: string, checklist: string, warning?: string) => dedent`
     ${header}
     
     ${checklist}
-    ${warning ? "\n" + sub(":warning:" + italics(bold(warning))) : ""}
+    ${warning ? "\n" + sub(":warning: " + italics(bold(warning))) : ""}
     `;
 
 const createLabelChecklists = async (context: PRContext, config: Config, useLabels = false) => {
@@ -114,63 +114,68 @@ const createLabelChecklists = async (context: PRContext, config: Config, useLabe
 
   let checklists = parseAutoChecklists(context.payload.pull_request.body);
 
-  const semverChecklist = createAutoChecklist(
-    ChecklistKey.semver,
-    await Promise.all(
-      ["major", "minor", "patch"].map(async labelType => {
-        const label = await populateLabel(labelType, config.labels[labelType], context, labels);
-        let checked = false;
-        const labelId = hash(label.name);
+  const semverChecklistItems = await Promise.all(
+    ["major", "minor", "patch"].map(async labelType => {
+      const label = await populateLabel(labelType, config.labels[labelType], context, labels);
+      let checked = false;
+      const labelId = hash(label.name);
 
-        // If a checklist for this type already exists, correctly populate the checklist
-        const semverChecklist = checklists[ChecklistKey.semver];
-        if (!useLabels && semverChecklist) {
-          const checklistItem = semverChecklist.items.find(({ id }) => id === labelId);
-          checked = (checklistItem && checklistItem.checked) || false;
-        }
+      // If a checklist for this type already exists, correctly populate the checklist
+      const semverChecklist = checklists[ChecklistKey.semver];
+      if (!useLabels && semverChecklist) {
+        const checklistItem = semverChecklist.items.find(({ id }) => id === labelId);
+        checked = (checklistItem && checklistItem.checked) || false;
+      }
 
-        if (useLabels) {
-          checked = prLabels.includes(label.name);
-        }
+      if (useLabels) {
+        checked = prLabels.includes(label.name);
+      }
 
-        return {
-          id: labelId,
-          checked,
-          body: renderLabel(label),
-        };
-      }),
-    ),
+      return {
+        id: labelId,
+        checked,
+        body: renderLabel(label),
+      };
+    }),
   );
+  const semverChecklist = createAutoChecklist(ChecklistKey.semver, semverChecklistItems);
+  const semverWarnings = moreThanOneItemChecked(semverChecklistItems)
+    ? "At most one semver label should be selected"
+    : undefined;
 
-  const skipReleaseChecklist = createAutoChecklist(
-    ChecklistKey.skipRelease,
-    await Promise.all(
-      getSkipReleaseLabelsFromConfig(config).map(async labelConfig => {
-        const label = await populateLabel("skip-release", labelConfig, context, labels);
-        let checked = false;
-        const labelId = hash(label.name);
+  const skipReleaseChecklistItems = await Promise.all(
+    getSkipReleaseLabelsFromConfig(config).map(async labelConfig => {
+      const label = await populateLabel("skip-release", labelConfig, context, labels);
+      let checked = false;
+      const labelId = hash(label.name);
 
-        // If a checklist for this type already exists, correctly populate the checklist
-        const skipReleaseChecklist = checklists[ChecklistKey.skipRelease];
-        if (!useLabels && skipReleaseChecklist) {
-          const checklistItem = skipReleaseChecklist.items.find(({ id }) => id === labelId);
-          checked = (checklistItem && checklistItem.checked) || false;
-        }
+      // If a checklist for this type already exists, correctly populate the checklist
+      const skipReleaseChecklist = checklists[ChecklistKey.skipRelease];
+      if (!useLabels && skipReleaseChecklist) {
+        const checklistItem = skipReleaseChecklist.items.find(({ id }) => id === labelId);
+        checked = (checklistItem && checklistItem.checked) || false;
+      }
 
-        if (useLabels) {
-          checked = prLabels.includes(label.name);
-        }
+      if (useLabels) {
+        checked = prLabels.includes(label.name);
+      }
 
-        return {
-          id: labelId,
-          checked,
-          body: renderLabel(label),
-        };
-      }),
-    ),
+      return {
+        id: labelId,
+        checked,
+        body: renderLabel(label),
+      };
+    }),
   );
+  const skipReleaseChecklist = createAutoChecklist(ChecklistKey.skipRelease, skipReleaseChecklistItems);
+  const skipReleaseWarnings = moreThanOneItemChecked(skipReleaseChecklistItems)
+    ? "At most one skip release label should be selected"
+    : undefined;
 
-  return [section(semverHead, semverChecklist), section(skipReleaseHead, skipReleaseChecklist)];
+  return [
+    section(semverHead, semverChecklist, semverWarnings),
+    section(skipReleaseHead, skipReleaseChecklist, skipReleaseWarnings),
+  ];
 };
 
 export const isOnboarding = (context: PRContext) => {

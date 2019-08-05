@@ -63,5 +63,5 @@ export function parseChecklists(text: string, namespace?: string) {
   return namespace ? checklists[namespace] : checklists;
 }
 
-export const atMostOneItemChecked = (checklist: Checklist) =>
-  checklist.items.reduce((total, item) => (item.checked ? total + 1 : total), 0) <= 1;
+export const moreThanOneItemChecked = (checklistItems: ChecklistItem[]) =>
+  checklistItems.reduce((total, item) => (item.checked ? total + 1 : total), 0) > 1;
