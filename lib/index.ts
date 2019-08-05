@@ -42,7 +42,8 @@ export = async (req: NowRequest, res: NowResponse) => {
   if (event && topLevelEvents.includes(event as string)) {
     // Prep cache
     global.cache = {};
-    const { action } = (await json(req)) as any;
+    const { action, number } = (await json(req)) as any;
+    logger.info(`--- PR #${number} ${event}.${action} --------------`);
     const relatedFeatures = features.filter(
       f => f.events.includes(event as WebHookEvent) || f.events.includes(`${event}.${action}` as WebHookEvent),
     );
