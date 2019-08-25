@@ -2,7 +2,7 @@ import { WebHookEvent } from "./models/webhooks";
 import { NowRequest, NowResponse } from "@now/node";
 import { flatMap } from "lodash";
 import { toLambda } from "probot-serverless-now";
-import { OnCallback } from "probot/lib/application";
+import { OnCallback, Application } from "probot/lib/application";
 import { ClientRequest } from "http";
 import { json } from "micro";
 import { WebhookPayloadPullRequest } from "@octokit/webhooks";
@@ -16,7 +16,7 @@ const logger = getLogger("app");
 interface FeatureListing {
   name: string;
   events: WebHookEvent[];
-  handler: OnCallback<WebhookPayloadPullRequest>;
+  handler: (app: Application) => OnCallback<WebhookPayloadPullRequest>;
 }
 
 type FeatureCollection = FeatureListing[];
@@ -50,7 +50,7 @@ export = async (req: NowRequest, res: NowResponse) => {
     logger.debug("related features", relatedFeatures.length);
     return toLambda(app => {
       for (let feature of relatedFeatures) {
-        app.on(feature.events, feature.handler);
+        app.on(feature.events, feature.handler((app as unknown) as Application));
       }
     })((req as unknown) as ClientRequest, res);
   } else {

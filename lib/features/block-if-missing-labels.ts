@@ -4,7 +4,7 @@ import { getLogger } from "../utils/logger";
 import { formattedRepoName } from "../models/context";
 import { LabelRelease, LabelError } from "../models/release";
 import { WebhookPayloadPullRequest } from "@octokit/webhooks";
-import { Context } from "probot";
+import { Context, Application } from "probot";
 import { setStatus } from "../models/status";
 import { getConfig } from "../models/config";
 import { getLabelRelease } from "../models/release";
@@ -44,7 +44,7 @@ export const buildStatusMessage = (context: PRContext, release: LabelRelease): S
   }
 };
 
-export default async (context: Context<WebhookPayloadPullRequest>) => {
+export default (app: Application) => async (context: Context<WebhookPayloadPullRequest>) => {
   // Get Config
   const config = await getConfig(context);
 

@@ -15,7 +15,7 @@ import {
 } from "../models/label";
 import { sub, italics, bold } from "../utils/markdown";
 import { WebhookPayloadPullRequest } from "@octokit/webhooks";
-import { Context } from "probot";
+import { Context, Application } from "probot";
 import { getLabelRelease } from "../models/release";
 import { getLogger } from "../utils/logger";
 import { isString, isEqual } from "lodash";
@@ -254,7 +254,10 @@ export const didChecklistsChange = (newMessage: string, oldMessage: string) => {
   return checklistChanged;
 };
 
-export default async (context: Context<WebhookPayloadPullRequest>) => {
+/**
+ * This is the entry point of the PR Onboarding feature.
+ */
+export default (app: Application) => async (context: Context<WebhookPayloadPullRequest>) => {
   const { action, pull_request } = context.payload;
   const config = await getConfig(context);
   const release = getLabelRelease(context, config);
