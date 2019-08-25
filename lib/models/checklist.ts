@@ -65,3 +65,6 @@ export function parseChecklists(text: string, namespace?: string) {
 
 export const moreThanOneItemChecked = (checklistItems: ChecklistItem[]) =>
   checklistItems.reduce((total, item) => (item.checked ? total + 1 : total), 0) > 1;
+
+export const flattenChecklists = (checklists: Checklist[]) =>
+  checklists.map(checklist => checklist.items).reduce((a, b) => a.concat(b), []);

@@ -2,7 +2,13 @@ import { PRContext, sentByThisApp } from "../models/context";
 import { hasReleaseLabels } from "../models/release";
 import { Config, getConfig } from "../models/config";
 import dedent from "dedent";
-import { createChecklist, parseChecklists, ChecklistItem, moreThanOneItemChecked } from "../models/checklist";
+import {
+  createChecklist,
+  parseChecklists,
+  ChecklistItem,
+  moreThanOneItemChecked,
+  flattenChecklists,
+} from "../models/checklist";
 import {
   renderLabel,
   populateLabel,
@@ -90,8 +96,8 @@ const overwriteMessage = (context: PRContext, content: string) => {
 const sectionHeader = (text: string, secondaryText?: string, info?: string) =>
   sub(`${bold(text)}${secondaryText ? ` ${italics(secondaryText)}` : ""}`);
 
-const semverHead = sectionHeader("Semver Labels", "(choose one at most)");
-const skipReleaseHead = sectionHeader("Skip Release Labels");
+const semverHead = sectionHeader("Semver Labels", "(choose at most one)");
+const skipReleaseHead = sectionHeader("Skip Release Labels", "(chose at most one)");
 
 const section = (header: string, checklist: string, warning?: string) => dedent`
     ##
@@ -218,17 +224,15 @@ const getRequiredLabelChanges = (body: string, config: Config) => {
   const checklists = parseAutoChecklists(parseMessage(body));
   const checklistKeys = Object.values(ChecklistKey);
 
-  const checklistItems = Object.values(checklists)
-    .filter(checklist => checklistKeys.includes(checklist.id))
-    .map(checklist => checklist.items)
-    .reduce((a, b) => a.concat(b), []);
+  const validChecklists = Object.values(checklists).filter(checklist => checklistKeys.includes(checklist.id));
 
-  const labelsToAdd = checklistItems
+  // Don't add labels if there are too many items checked for any given checklist
+  const labelsToAdd = flattenChecklists(validChecklists.filter(checklist => !moreThanOneItemChecked(checklist.items)))
     .filter(checklist => checklist.checked)
     .map(checklist => getLabelTextFromChecklistItem(checklist, config))
     .filter(label => !!label) as string[];
 
-  const labelsToRemove = checklistItems
+  const labelsToRemove = flattenChecklists(validChecklists)
     .filter(checklist => !checklist.checked)
     .map(checklistItem => getLabelTextFromChecklistItem(checklistItem, config))
     .filter(label => !!label) as string[];
