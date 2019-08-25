@@ -3,6 +3,7 @@ node_modules
 .rts2*
 .next
 *-error.log
+dist
 
 lib/**/*.js*
 lib/**/*.d.ts

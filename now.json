@@ -4,7 +4,7 @@
   "public": false,
   "builds": [
     {
-      "src": "now.js",
+      "src": "lib/index.ts",
       "use": "@now/node"
     },
     {
@@ -26,7 +26,7 @@
   "routes": [
     {
       "src": "/",
-      "dest": "/now.js"
+      "dest": "/lib/index.ts"
     },
     {
       "src": "/lambda/label",

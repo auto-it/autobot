@@ -3,60 +3,11 @@ import { WebhookPayloadPullRequest } from "@octokit/webhooks";
 import merge from "deepmerge";
 import axios from "axios";
 import { property, isPlainObject } from "lodash";
-import { getLogger } from "./utils/logger";
-
-// FIXME: Find a good way to extract this from auto
-const defaultLabelDefinition = {
-  major: {
-    name: "major",
-    title: "💥  Breaking Change",
-    description: "Increment the major version when merged",
-  },
-  minor: {
-    name: "minor",
-    title: "🚀  Enhancement",
-    description: "Increment the minor version when merged",
-  },
-  patch: {
-    name: "patch",
-    title: "🐛  Bug Fix",
-    description: "Increment the patch version when merged",
-  },
-  "skip-release": {
-    name: "skip-release",
-    description: "Preserve the current version when merged",
-  },
-  release: {
-    name: "release",
-    description: "Create a release when this pr is merged",
-  },
-  prerelease: {
-    name: "prerelease",
-    title: "🚧 Prerelease",
-    description: "Create a pre-release version when merged",
-  },
-  internal: {
-    name: "internal",
-    title: "🏠  Internal",
-    description: "Changes only affect the internal API",
-  },
-  documentation: {
-    name: "documentation",
-    title: "📝  Documentation",
-    description: "Changes only affect the documentation",
-  },
-};
+import { getLogger } from "../utils/logger";
+import { LabelConfig, defaultLabelDefinition } from "./label";
+import { PRContext } from "./context";
 
 const logger = getLogger("config");
-
-type LabelConfig =
-  | string
-  | {
-      name?: string;
-      title: string;
-      description: string;
-      color?: string;
-    };
 
 export interface Config {
   labels: {
@@ -153,4 +104,11 @@ export const fetchConfig = async (context: Context<WebhookPayloadPullRequest>, p
   config = merge({ labels: defaultLabelDefinition }, config);
   logger.info({ msg: "final config", config });
   return config;
+};
+
+export const getConfig = async (context: PRContext) => {
+  if (!global.cache.config) {
+    global.cache.config = await fetchConfig(context);
+  }
+  return global.cache.config;
 };

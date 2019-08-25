@@ -6,9 +6,10 @@ module.exports = {
     sourceType: "module",
   },
   rules: {
-    "@typescript-eslint/explicit-function-return-type": false,
-    "@typescript-eslint/no-explicit-any": false,
-    "@typescript-eslint/camelcase": false,
-    "@typescript-eslint/no-object-literal-type-assertion": false,
+    "@typescript-eslint/explicit-function-return-type": 0,
+    "@typescript-eslint/no-explicit-any": 0,
+    "@typescript-eslint/camelcase": 0,
+    "@typescript-eslint/no-object-literal-type-assertion": 0,
+    "@typescript-eslint/no-non-null-assertion": 0,
   },
 };
