@@ -1,4 +1,4 @@
-import { PRContext } from "../models/context";
+import { PRContext, sentByThisApp } from "../models/context";
 import { hasReleaseLabels } from "../models/release";
 import { Config, getConfig } from "../models/config";
 import dedent from "dedent";
@@ -102,6 +102,12 @@ const section = (header: string, checklist: string, warning?: string) => dedent`
     ${warning ? "\n" + sub(":warning: " + italics(bold(warning))) : ""}
     `;
 
+/**
+ * Creates the checklist markdown given the current state of the PR and optionally which labels are on a PR.
+ * If the checklist was already present, it takes the past state of the checklist into account.
+ *
+ * @param useLabels Whether labels present on the PR should be used in determining which items are checked
+ */
 const createLabelChecklists = async (context: PRContext, config: Config, useLabels = false) => {
   // Fetch labels from config
   const { owner, repo } = context.repo();
@@ -209,10 +215,10 @@ const getLabelTextFromChecklistItem = (checklistItem: ChecklistItem, config: Con
  * @param config The auto configuration object
  */
 const getRequiredLabelChanges = (body: string, config: Config) => {
-  const checklist = parseAutoChecklists(parseMessage(body));
+  const checklists = parseAutoChecklists(parseMessage(body));
   const checklistKeys = Object.values(ChecklistKey);
 
-  const checklistItems = Object.values(checklist)
+  const checklistItems = Object.values(checklists)
     .filter(checklist => checklistKeys.includes(checklist.id))
     .map(checklist => checklist.items)
     .reduce((a, b) => a.concat(b), []);
@@ -233,6 +239,9 @@ const getRequiredLabelChanges = (body: string, config: Config) => {
   };
 };
 
+/**
+ * Did the text of the PR Onboarding message inside the body change between updates?
+ */
 export const didMessageChange = (context: PRContext) => {
   if (!didBodyChange(context)) {
     logger.debug("No body changes");
@@ -283,6 +292,13 @@ export default (app: Application) => async (context: Context<WebhookPayloadPullR
     // Updated after user changes
   } else if (onBoarding && action === "edited" && didMessageChange(context)) {
     logger.debug("starting edited flow");
+
+    // Do nothing if this was just triggered from a previous update
+    if (await sentByThisApp(app, context)) {
+      logger.debug("Skipping edited event because update was sent by current app");
+      return;
+    }
+
     const { owner, repo, number: pull_number } = context.issue();
     const newMessage = onBoardingMessage(await createLabelChecklists(context, config));
     const body = overwriteMessage(context, newMessage);
@@ -313,11 +329,22 @@ export default (app: Application) => async (context: Context<WebhookPayloadPullR
     // When a label is added or removed
   } else if (onBoarding && (action === "labeled" || action === "unlabeled")) {
     logger.debug("starting labeled flow");
+
+    // Do nothing if this was just triggered from a previous update
+    if (await sentByThisApp(app, context)) {
+      logger.debug("Skipping labeled event because update was sent by current app");
+      return;
+    }
+
     const { owner, repo, number: pull_number } = context.issue();
 
     const newMessage = onBoardingMessage(await createLabelChecklists(context, config, true));
 
-    if (didChecklistsChange(newMessage, parseMessage(pull_request.body))) {
+    const checklistChanged = didChecklistsChange(newMessage, parseMessage(pull_request.body));
+
+    logger.debug("Did checklist change?", checklistChanged);
+
+    if (checklistChanged) {
       logger.debug("Writing body from label updates");
       const body = overwriteMessage(context, newMessage);
       const [updateBodyError] = await to(
