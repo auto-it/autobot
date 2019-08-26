@@ -77,7 +77,7 @@ const collapsedOnBoardingMessage = (sections: string[]) => dedent`
   <summary><b>Choose a release label</b></summary>
 
   &nbsp;
-  <img align="left" width="60" src="https://autobot.auto-it.now.sh/public/logo.png"/> This repository uses [auto](https://github.com/intuit/auto) to generate releases. In order to do that, it needs an appropriate label assigned to each PR. Choose a label below that you feel best suites your changes. 
+  <img align="left" width="60" src="https://autobot.auto-it.now.sh/public/logo.png"/> This repository uses [auto](https://github.com/intuit/auto) to generate releases. In order to do that, it needs an appropriate label assigned to each PR. Choose a label below that you feel best suites your changes.
 
   ${sections.join("\n\n")}
 
@@ -124,7 +124,7 @@ const createLabelChecklists = async (context: PRContext, config: Config, useLabe
     prLabels = getLabelsOnPR(context).map(label => labelToString(label));
   }
 
-  let checklists = parseAutoChecklists(context.payload.pull_request.body);
+  let checklists = parseAutoChecklists(context.payload.pull_request.body) || {};
 
   const semverChecklistItems = await Promise.all(
     ["major", "minor", "patch"].map(async labelType => {

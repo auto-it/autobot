@@ -50,7 +50,7 @@ export = async (req: NowRequest, res: NowResponse) => {
     logger.debug("related features", relatedFeatures.length);
     return toLambda(app => {
       for (let feature of relatedFeatures) {
-        app.on(feature.events, feature.handler((app as unknown) as Application));
+        app.on(feature.events, feature.handler((app as unknown) as Application) as any);
       }
     })((req as unknown) as ClientRequest, res);
   } else {

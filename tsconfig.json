@@ -1,11 +1,11 @@
 {
   "compilerOptions": {
     "allowJs": false,
-    "lib": ["es2015", "es2017"],
+    "lib": ["es2017"],
     "jsx": "react",
     "module": "commonjs",
     "moduleResolution": "node",
-    "target": "es5",
+    "target": "ES2017",
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "noUnusedLocals": false,
