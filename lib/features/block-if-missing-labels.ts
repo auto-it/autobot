@@ -48,6 +48,11 @@ export default (app: Application) => async (context: Context<WebhookPayloadPullR
   // Get Config
   const config = await getConfig(context);
 
+  if (!config) {
+    logger.debug("No config found, skipping feature");
+    return;
+  }
+
   logger.debug(`${context.name}.${context.payload.action}`);
 
   // Set pending status

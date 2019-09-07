@@ -6,6 +6,7 @@ import { property, isPlainObject } from "lodash";
 import { getLogger } from "../utils/logger";
 import { LabelConfig, defaultLabelDefinition } from "./label";
 import { PRContext } from "./context";
+import to from "await-to-js";
 
 const logger = getLogger("config");
 
@@ -83,10 +84,22 @@ const fetchExtendedConfig = async (context: Context<WebhookPayloadPullRequest>, 
  * @param context The context of the PR being represented
  * @param path A sub-path of the json result to access (i.e. "config.auto")
  */
-export const fetchConfig = async (context: Context<WebhookPayloadPullRequest>, path = "") => {
+export const fetchConfig = async (context: Context<WebhookPayloadPullRequest>, path = ""): Promise<Config | null> => {
   // Download config from GitHub
-  const contentArgs = context.repo({ path: ".autorc", ref: context.payload.pull_request.head.ref });
-  const { data } = await context.github.repos.getContents(contentArgs);
+  const contentArgs = context.repo({ path: ".autorc" });
+  const [err, contentResponse] = await to(context.github.repos.getContents(contentArgs));
+
+  if (err && err.code !== 404) {
+    throw new Error(`Unable to fetch config from GitHub with unknown error: ${err.message}`);
+  }
+
+  if ((err && err.code === 404) || !contentResponse) {
+    logger.info("Could not find config");
+    return null;
+  }
+
+  const { data } = contentResponse;
+
   let config = JSON.parse(Buffer.from(data.content, "base64").toString());
 
   // Fetch extended config
@@ -106,7 +119,7 @@ export const fetchConfig = async (context: Context<WebhookPayloadPullRequest>, p
   return config;
 };
 
-export const getConfig = async (context: PRContext) => {
+export const getConfig = async (context: PRContext): ReturnType<typeof fetchConfig> => {
   if (!global.cache.config) {
     global.cache.config = await fetchConfig(context);
   }
