@@ -6,6 +6,7 @@ import { property, isPlainObject } from "lodash";
 import { getLogger } from "../utils/logger";
 import { LabelConfig, defaultLabelDefinition } from "./label";
 import { PRContext } from "./context";
+import to from "await-to-js";
 
 const logger = getLogger("config");
 
@@ -86,7 +87,19 @@ const fetchExtendedConfig = async (context: Context<WebhookPayloadPullRequest>, 
 export const fetchConfig = async (context: Context<WebhookPayloadPullRequest>, path = "") => {
   // Download config from GitHub
   const contentArgs = context.repo({ path: ".autorc" });
-  const { data } = await context.github.repos.getContents(contentArgs);
+  const [err, contentResponse] = await to(context.github.repos.getContents(contentArgs));
+
+  if (err && err.code !== 404) {
+    throw new Error(`Unable to fetch config from GitHub with unknown error: ${err.message}`);
+  }
+
+  if ((err && err.code === 404) || !contentResponse) {
+    logger.info("Could not find config");
+    return null;
+  }
+
+  const { data } = contentResponse;
+
   let config = JSON.parse(Buffer.from(data.content, "base64").toString());
 
   // Fetch extended config
