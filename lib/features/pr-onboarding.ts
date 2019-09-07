@@ -273,6 +273,12 @@ export const didChecklistsChange = (newMessage: string, oldMessage: string) => {
 export default (app: Application) => async (context: Context<WebhookPayloadPullRequest>) => {
   const { action, pull_request } = context.payload;
   const config = await getConfig(context);
+
+  if (!config) {
+    logger.debug("No config found, skipping feature");
+    return;
+  }
+
   const release = getLabelRelease(context, config);
   const onBoarding = action !== "opened" && isOnboarding(context);
 
