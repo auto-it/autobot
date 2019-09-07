@@ -85,7 +85,7 @@ const fetchExtendedConfig = async (context: Context<WebhookPayloadPullRequest>, 
  */
 export const fetchConfig = async (context: Context<WebhookPayloadPullRequest>, path = "") => {
   // Download config from GitHub
-  const contentArgs = context.repo({ path: ".autorc", ref: context.payload.pull_request.head.ref });
+  const contentArgs = context.repo({ path: ".autorc" });
   const { data } = await context.github.repos.getContents(contentArgs);
   let config = JSON.parse(Buffer.from(data.content, "base64").toString());
 
