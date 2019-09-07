@@ -84,7 +84,7 @@ const fetchExtendedConfig = async (context: Context<WebhookPayloadPullRequest>, 
  * @param context The context of the PR being represented
  * @param path A sub-path of the json result to access (i.e. "config.auto")
  */
-export const fetchConfig = async (context: Context<WebhookPayloadPullRequest>, path = "") => {
+export const fetchConfig = async (context: Context<WebhookPayloadPullRequest>, path = ""): Promise<Config | null> => {
   // Download config from GitHub
   const contentArgs = context.repo({ path: ".autorc" });
   const [err, contentResponse] = await to(context.github.repos.getContents(contentArgs));
@@ -119,7 +119,7 @@ export const fetchConfig = async (context: Context<WebhookPayloadPullRequest>, p
   return config;
 };
 
-export const getConfig = async (context: PRContext) => {
+export const getConfig = async (context: PRContext): ReturnType<typeof fetchConfig> => {
   if (!global.cache.config) {
     global.cache.config = await fetchConfig(context);
   }
