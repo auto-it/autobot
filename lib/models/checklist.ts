@@ -40,7 +40,7 @@ export function parseChecklists(text: string, namespace?: string) {
     .map(check => check.match(CHECK_DETAILS))
     .filter(check => check !== null)
     .forEach(check => {
-      let checked = !!check![1].trim();
+      const checked = !!check![1].trim();
       const [namespace, checklistID, checkID] = check![2].split(":");
       const body = check![3];
 
