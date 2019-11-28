@@ -11,5 +11,6 @@ module.exports = {
     "@typescript-eslint/camelcase": 0,
     "@typescript-eslint/no-object-literal-type-assertion": 0,
     "@typescript-eslint/no-non-null-assertion": 0,
+    "@typescript-eslint/ban-ts-ignore": 1,
   },
 };

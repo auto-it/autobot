@@ -124,7 +124,7 @@ const createLabelChecklists = async (context: PRContext, config: Config, useLabe
     prLabels = getLabelsOnPR(context).map(label => labelToString(label));
   }
 
-  let checklists = parseAutoChecklists(context.payload.pull_request.body) || {};
+  const checklists = parseAutoChecklists(context.payload.pull_request.body) || {};
 
   const semverChecklistItems = await Promise.all(
     ["major", "minor", "patch"].map(async labelType => {
@@ -199,9 +199,8 @@ export const isOnboarding = (context: PRContext) => {
  * `true` if there was a change to the body of the PR, `false` otherwise
  */
 const didBodyChange = (context: PRContext) =>
-  (context.payload.changes &&
-    context.payload.changes.body &&
-    isString(context.payload.changes.body!.from) &&
+  (context.payload.changes?.body &&
+    isString(context.payload.changes.body.from) &&
     !!context.payload.pull_request.body) ||
   false;
 
@@ -224,7 +223,9 @@ const getRequiredLabelChanges = (body: string, config: Config) => {
   const checklists = parseAutoChecklists(parseMessage(body));
   const checklistKeys = Object.values(ChecklistKey);
 
-  const validChecklists = Object.values(checklists).filter(checklist => checklistKeys.includes(checklist.id));
+  const validChecklists = Object.values(checklists).filter(checklist =>
+    checklistKeys.includes(checklist.id as ChecklistKey),
+  );
 
   // Don't add labels if there are too many items checked for any given checklist
   const labelsToAdd = flattenChecklists(validChecklists.filter(checklist => !moreThanOneItemChecked(checklist.items)))
