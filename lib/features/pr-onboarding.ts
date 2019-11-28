@@ -81,6 +81,7 @@ const collapsedOnBoardingMessage = (sections: string[]) => dedent`
   <summary><b>Choose a release label</b></summary>
 
   &nbsp;
+  <img align="left" width="60" src="https://autobot.auto-it.now.sh/public/logo.png"/> 
   ${onBoardingIntroText}
 
   ${sections.join("\n\n")}
@@ -94,7 +95,7 @@ const overwriteMessage = (context: PRContext, content: string) => {
   const { body } = context.payload.pull_request;
   const [start, bottomHalf] = body.split(MessageStart);
   const [, end] = bottomHalf.split(MessageEnd);
-  return start + messageWrapper(content) + end;
+  return start.trimRight() + messageWrapper(content) + end;
 };
 
 const sectionHeader = (text: string, secondaryText?: string, info?: string) =>
