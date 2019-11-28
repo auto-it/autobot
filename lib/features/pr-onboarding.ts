@@ -61,13 +61,17 @@ export const messageWrapper = (body: string) => dedent`
     ${MessageEnd} 
 `;
 
+const onBoardingIntroText = dedent`
+  This repository uses [auto](https://github.com/intuit/auto) to generate releases. In order to do that, 
+  it needs an appropriate label assigned to each PR. Choose a label below that you feel best suites your changes.
+`.replace(/\s+/g, " ");
+
 export const onBoardingMessage = (sections: string[]) => dedent`
     <img align="left" width="60" src="https://autobot.auto-it.now.sh/public/logo.png"/>
 
     ### Choose a release label
 
-    This repository uses [auto](https://github.com/intuit/auto) to generate releases. In order to do that, 
-    it needs an appropriate label assigned to each PR. Choose a label below that you feel best suites your changes.
+    ${onBoardingIntroText}
 
     ${sections.join("\n\n")}
   `;
@@ -77,7 +81,8 @@ const collapsedOnBoardingMessage = (sections: string[]) => dedent`
   <summary><b>Choose a release label</b></summary>
 
   &nbsp;
-  <img align="left" width="60" src="https://autobot.auto-it.now.sh/public/logo.png"/> This repository uses [auto](https://github.com/intuit/auto) to generate releases. In order to do that, it needs an appropriate label assigned to each PR. Choose a label below that you feel best suites your changes.
+  <img align="left" width="60" src="https://autobot.auto-it.now.sh/public/logo.png"/> 
+  ${onBoardingIntroText}
 
   ${sections.join("\n\n")}
 
@@ -90,7 +95,7 @@ const overwriteMessage = (context: PRContext, content: string) => {
   const { body } = context.payload.pull_request;
   const [start, bottomHalf] = body.split(MessageStart);
   const [, end] = bottomHalf.split(MessageEnd);
-  return start + messageWrapper(content) + end;
+  return start.trimRight() + messageWrapper(content) + end;
 };
 
 const sectionHeader = (text: string, secondaryText?: string, info?: string) =>
@@ -286,11 +291,8 @@ export default (app: Application) => async (context: Context<WebhookPayloadPullR
   if (action === "opened" && hasReleaseLabels(release) === false) {
     logger.debug("Starting on-boarding flow");
     const { owner, repo, number: pull_number } = context.issue();
-    const body = dedent`
-      ${pull_request.body}
-      
-      ${messageWrapper(onBoardingMessage(await createLabelChecklists(context, config)))}
-    `;
+    const body =
+      pull_request.body.trimRight() + messageWrapper(onBoardingMessage(await createLabelChecklists(context, config)));
 
     context.github.pulls.update({
       owner,
