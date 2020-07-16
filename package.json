@@ -29,7 +29,7 @@
     "axios": "^0.18.0",
     "color-composite": "^0.1.0",
     "dedent": "^0.7.0",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.19",
     "micro": "^9.3.4",
     "opentype.js": "^1.1.0",
     "pino": "^5.13.1",
