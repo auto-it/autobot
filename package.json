@@ -26,7 +26,7 @@
     "@primer/octicons": "^9.1.1",
     "auto": "^4.8.13",
     "await-to-js": "^2.1.1",
-    "axios": "^0.18.0",
+    "axios": "^0.21.1",
     "color-composite": "^0.1.0",
     "dedent": "^0.7.0",
     "lodash": "^4.17.15",
